@@ -1,0 +1,57 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+evaluating 27 held-out test images
+  IDRiD_55  8.5s
+  IDRiD_56  4.1s
+  IDRiD_57  4.6s
+  IDRiD_58  4.2s
+  IDRiD_59  4.3s
+  IDRiD_60  4.3s
+  IDRiD_61  4.4s
+  IDRiD_62  4.3s
+  IDRiD_63  4.4s
+  IDRiD_64  4.3s
+  IDRiD_65  4.6s
+  IDRiD_66  4.3s
+  IDRiD_67  4.3s
+  IDRiD_68  4.4s
+  IDRiD_69  4.1s
+  IDRiD_70  4.4s
+  IDRiD_71  4.4s
+  IDRiD_72  4.4s
+  IDRiD_73  4.4s
+  IDRiD_74  4.4s
+  IDRiD_75  4.4s
+  IDRiD_76  4.2s
+  IDRiD_77  4.3s
+  IDRiD_78  4.1s
+  IDRiD_79  4.0s
+  IDRiD_80  4.2s
+  IDRiD_81  4.4s
+
+=================================================================================
+  HELD-OUT TEST RESULTS - 27 IDRiD test images, never seen during training
+=================================================================================
+
+Task                   Output          Dice     IoU Precision  Recall    AUPR
+------------------------------------------------------------------------------
+Microaneurysm          Pixel mask    0.5185  0.3500    0.4828  0.5600  0.1990
+Exudates (hard)        Pixel mask    0.7315  0.5767    0.7444  0.7190  0.5948
+Exudates (soft)        Pixel mask    0.5460  0.3755    0.7126  0.4425  0.3330
+Haemorrhage - mask     Pixel mask    0.5904  0.4189    0.6210  0.5627  0.4697
+
+Task                   Output                 Accuracy Precision  Recall    Spec  ROC-AUC
+--------------------------------------------------------------------------------------
+Haemorrhage - flag     Binary (512px region)    0.8061    0.7109  0.8505  0.7776   0.8762
+Haemorrhage - flag     Binary (whole image)     1.0000    1.0000  1.0000   undef    undef
+
+Neovascularisation     -                      not trainable - no labels exist in IDRiD or APTOS
+
+NOTE: all 27 test images contain haemorrhage, so whole-image
+      SPECIFICITY and ROC-AUC are undefined (no negatives).
+      The 512px region row is the meaningful one.
+
+Auxiliary (not a headline task) - Optic disc: Dice 0.8987, AUPR 0.5088
+
+wrote results/metrics.csv

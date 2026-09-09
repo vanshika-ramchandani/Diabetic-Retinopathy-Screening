@@ -1,0 +1,84 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+tuning on 10 validation images
+  IDRiD_02  8.7s
+  IDRiD_06  3.8s
+  IDRiD_14  3.8s
+  IDRiD_25  3.8s
+  IDRiD_26  3.9s
+  IDRiD_27  3.7s
+  IDRiD_33  3.8s
+  IDRiD_40  3.7s
+  IDRiD_46  3.8s
+  IDRiD_52  3.9s
+
+channel             valAP   bestF1      thr
+Microaneurysm      0.2327   0.5450    0.991
+Haemorrhage        0.4245   0.5435    0.984
+Hard Exudate       0.6695   0.8001    0.968
+Soft Exudate       0.1393   0.4894    0.997
+Optic Disc         0.5379   0.8834    0.994
+
+saved models/thresholds.mat
+evaluating 27 held-out test images
+  IDRiD_55  5.2s
+  IDRiD_56  4.4s
+  IDRiD_57  4.7s
+  IDRiD_58  4.3s
+  IDRiD_59  4.4s
+  IDRiD_60  4.3s
+  IDRiD_61  4.2s
+  IDRiD_62  4.3s
+  IDRiD_63  4.2s
+  IDRiD_64  4.3s
+  IDRiD_65  4.7s
+  IDRiD_66  4.1s
+  IDRiD_67  4.3s
+  IDRiD_68  4.3s
+  IDRiD_69  4.2s
+  IDRiD_70  4.3s
+  IDRiD_71  4.3s
+  IDRiD_72  4.1s
+  IDRiD_73  4.4s
+  IDRiD_74  4.3s
+  IDRiD_75  4.3s
+  IDRiD_76  4.3s
+  IDRiD_77  4.2s
+  IDRiD_78  4.1s
+  IDRiD_79  4.4s
+  IDRiD_80  4.2s
+  IDRiD_81  4.3s
+
+=================================================================================
+  HELD-OUT TEST RESULTS - 27 IDRiD test images, never seen during training
+=================================================================================
+
+Task                   Output          Dice     IoU Precision  Recall    AUPR
+------------------------------------------------------------------------------
+Microaneurysm          Pixel mask    0.5185  0.3500    0.4828  0.5600  0.1990
+Exudates (hard)        Pixel mask    0.7315  0.5767    0.7444  0.7190  0.5948
+Exudates (soft)        Pixel mask    0.5460  0.3755    0.7126  0.4425  0.3330
+Haemorrhage - mask     Pixel mask    0.5904  0.4189    0.6210  0.5627  0.4697
+
+Task                   Output                 Accuracy Precision  Recall    Spec  ROC-AUC
+--------------------------------------------------------------------------------------
+Haemorrhage - flag     Binary (512px region)    0.8061    0.7109  0.8505  0.7776   0.0000
+Haemorrhage - flag     Binary (whole image)     1.0000    1.0000  1.0000   undef    undef
+
+Neovascularisation     -                      not trainable - no labels exist in IDRiD or APTOS
+
+NOTE: all 27 test images contain haemorrhage, so whole-image
+      SPECIFICITY and ROC-AUC are undefined (no negatives).
+      The 512px region row is the meaningful one.
+
+Auxiliary (not a headline task) - Optic disc: Dice 0.8987, AUPR 0.5088
+
+wrote results/metrics.csv
+  IDRiD_55 overlay written
+  IDRiD_56 overlay written
+  IDRiD_57 overlay written
+  IDRiD_58 overlay written
+  IDRiD_59 overlay written
+  IDRiD_60 overlay written
+overlays in C:\Users\kanha\Desktop\SIH\results\overlays  (left = ground truth, right = prediction)

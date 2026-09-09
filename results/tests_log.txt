@@ -1,0 +1,47 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+Running NetraDataTests
+.......... ........
+Done NetraDataTests
+__________
+
+Running NetraModelTests
+.......... ..
+  channel             modelAP   randomAP prevalence
+  Microaneurysm        0.2307     0.0015    0.00153
+  Haemorrhage          0.1585     0.0036    0.00361
+  Hard Exudate         0.5993     0.0123    0.01234
+  Soft Exudate         0.2307     0.0004    0.00037
+  Optic Disc           0.5498     0.0240    0.02403
+..
+Done NetraModelTests
+__________
+
+Running NetraPipelineTests
+.......... ..........
+Done NetraPipelineTests
+__________
+
+
+================ TEST SUMMARY ================
+passed   52
+failed   0
+skipped  0
+duration 190.0 s
+
+ans = 
+
+  152 TestResult array with properties:
+
+    Name
+    Passed
+    Failed
+    Incomplete
+    Duration
+    Details
+
+Totals:
+   52 Passed, 0 Failed, 0 Incomplete.
+   189.9604 seconds testing time.
+

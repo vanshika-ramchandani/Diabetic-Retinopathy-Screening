@@ -1,0 +1,115 @@
+# NETRA - measured facts for the SIH deck
+# generated 2026-09-05 21:56 by s14_integration
+# Every number below came from a script in matlab/. Nothing here is estimated.
+# If a figure is not in this file it was not measured - do not put it on a slide.
+
+[lesion_segmentation]  # s07_evaluate_test, 27 sealed IDRiD test images
+dice.microaneurysm = 0.5185
+dice.exudates_hard = 0.7315
+dice.exudates_soft = 0.5460
+dice.haemorrhage_mask = 0.5904
+haem_region.accuracy = 0.8061
+haem_region.recall = 0.8505
+haem_region.specificity = 0.7776
+haem_region.roc_auc = 0.8762
+lesion.train_images = 44
+lesion.val_images = 10
+lesion.test_images = 27
+lesion.nv_trainable = false  # no pixel-level NV labels exist in IDRiD or APTOS
+
+[dr_grader]  # s11/s12, sealed APTOS test split
+grader.n_test = 549
+grader.sensitivity = 0.9193
+grader.specificity = 0.9540
+grader.precision = 0.9318
+grader.accuracy_referable = 0.9399
+grader.roc_auc = 0.9834
+grader.threshold = 0.4780  # chosen on VALIDATION at sens >= 0.90
+grader.grade5_accuracy = 0.8015
+grader.qwk = 0.8755
+grader.meets_ps_requirement = true  # sens>0.90 and spec>0.85
+
+[quality_gate]  # s13_calibrate_quality + this run
+quality.calibration_n = 400
+quality.calibration_source = APTOS 2019 raw training captures, random sample
+quality.percentiles = four reject axes share percentile p=1.14, fitted so the overall reject rate is 4.8%; illumination p10 triggers ENHANCE only
+quality.actual_reject = 0.0475
+quality.target_reject = 0.0500
+quality.shared_percentile = 1.1447
+quality.idrid_pass = 25
+quality.idrid_enhance = 2
+quality.idrid_reject = 0
+quality.idrid_mean_score = 92.7
+
+[dual_evidence]
+# measured on 27 IDRiD images at NATIVE resolution (the lesion net's trained regime),
+# but IDRiD is 100% diseased, so this is not a screening-population rate.
+dual.idrid_agreement_rate = 0.5185
+dual.idrid_escalation_rate = 0.4815
+dual.idrid_n = 27
+# measured on the 549-image sealed APTOS split - representative class mix,
+# BUT those images are cached at 512px, outside the lesion net's native-resolution
+# regime, where it over-calls. Treat the escalation COST here as an upper bound.
+d2.aptos_n = 549
+d2.aptos_escalation_rate = 0.6211  # inflated by the resolution mismatch
+d2.cnn_referable_errors = 43
+d2.errors_escalated = 36
+d2.catch_rate = 0.8372  # THE safety number: CNN errors D2 caught
+d2.cnn_missed_referable = 28
+d2.silently_missed_after_d2 = 0  # referable cases auto-reported as normal
+d2.cost_validated_at_deployment_resolution = false
+
+[pipeline]
+pipeline.mean_seconds_per_image = 9.99
+pipeline.integration_images = 27
+
+[district_model]  # districtSim, driven by the rates above
+district.patients_per_year = 100000
+district.rate_referable = 0.4007
+district.rate_escalated = 0.4815
+district.rate_rejected = 0.0000
+district.manual_reviewed = 100000
+district.netra_reviewed = 40073
+district.manual_experts = 1.67
+district.netra_experts = 0.56
+district.manual_gb_per_day = 0.86
+district.netra_gb_per_day = 0.35
+district.bandwidth_cut = 0.5886
+district.workload_cut = 0.5993
+district.expert_min_per_day = 200.4
+district.flagged_fraction = 0.4007  # grader triage rate, the validated one
+district.break_even_flagged = 0.7200  # depends only on arrivals/reading time/hours
+district.headroom = 0.3193
+district.netra_stable = true
+district.manual_stable = false
+district.summary = 100000 patients/yr: expert reads fall 60% (100000 -> 40073 images), staffing 1.7 -> 0.6 FTE, bandwidth down 59%
+
+[simulink_model]  # buildNetraSimulink - core Simulink, NOT SimEvents
+# SimEvents is licensed here but not installed (no toolbox/simevents on disk),
+# so the queue is modelled with core Simulink blocks that do open on this machine.
+sl.arrivals_per_day = 400
+sl.flagged_fraction = 0.4007
+sl.demand_manual_sec_day = 36000
+sl.demand_netra_sec_day = 12022
+sl.capacity_sec_day = 21600
+sl.manual_stable = false
+sl.netra_stable = true
+sl.backlog_manual_expert_days = 167
+sl.backlog_netra_expert_days = 0
+
+[epidemiology]  # published sources, cited on the slide
+epi.diabetics_india = 101000000  # ICMR-INDIAB, Lancet Diab Endo 2023
+epi.dr_prevalence = 0.169        # ICMR-INDIAB
+epi.preventable = 0.90           # NPCBVI / WHO
+
+[build_status]  # true state, not aspirational
+status.quality_gate = built+calibrated
+status.enhancement = built
+status.lesion_segmentation = trained+evaluated
+status.dr_grader = trained+evaluated
+status.gradcam = built
+status.dual_evidence = built+measured
+status.gui = built
+status.simulink = built + simulated (core Simulink)
+status.simevents = licensed but NOT installed on this machine
+status.neovascularisation = not built - no labels exist

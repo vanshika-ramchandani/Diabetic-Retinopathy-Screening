@@ -1,0 +1,56 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+triptych from C:\Users\kanha\Desktop\SIH\data\aptos\A. Segmentation\1. Original Images\b. Testing Set\IDRiD_60.jpg
+wrote figures/triptych.png
+title hero from C:\Users\kanha\Desktop\SIH\data\cache\aptos512\001639a390f0.png
+wrote figures/title_hero.png  (predicted grade 3, p=0.59)
+integration run over 27 IDRiD test images
+
+  IDRiD_55.jpg q=PASS      97/100  rule=2 cnn=3  ESCALATE      7.3s
+  IDRiD_56.jpg q=PASS      98/100  rule=2 cnn=3  ESCALATE      11.7s
+  IDRiD_57.jpg q=ENHANCE   79/100  rule=2 cnn=2  AUTO_REPORT   20.4s
+  IDRiD_58.jpg q=PASS      97/100  rule=2 cnn=2  AUTO_REPORT   6.7s
+  IDRiD_59.jpg q=PASS      85/100  rule=2 cnn=2  AUTO_REPORT   7.1s
+  IDRiD_60.jpg q=PASS      95/100  rule=2 cnn=2  ESCALATE      6.4s
+  IDRiD_61.jpg q=PASS     100/100  rule=2 cnn=3  ESCALATE      6.4s
+  IDRiD_62.jpg q=PASS      99/100  rule=2 cnn=2  AUTO_REPORT   7.3s
+  IDRiD_63.jpg q=ENHANCE   80/100  rule=2 cnn=2  AUTO_REPORT   9.7s
+  IDRiD_64.jpg q=PASS      86/100  rule=2 cnn=2  AUTO_REPORT   6.7s
+  IDRiD_65.jpg q=PASS      87/100  rule=2 cnn=2  ESCALATE      6.8s
+  IDRiD_66.jpg q=PASS      86/100  rule=2 cnn=2  ESCALATE      6.4s
+  IDRiD_67.jpg q=PASS      92/100  rule=2 cnn=3  AUTO_REPORT   6.4s
+  IDRiD_68.jpg q=PASS      96/100  rule=2 cnn=4  ESCALATE      6.4s
+  IDRiD_69.jpg q=PASS      97/100  rule=2 cnn=3  ESCALATE      6.6s
+  IDRiD_70.jpg q=PASS      96/100  rule=2 cnn=2  AUTO_REPORT   6.4s
+  IDRiD_71.jpg q=PASS      96/100  rule=2 cnn=3  AUTO_REPORT   6.5s
+  IDRiD_72.jpg q=PASS      95/100  rule=2 cnn=2  AUTO_REPORT   6.5s
+  IDRiD_73.jpg q=PASS      93/100  rule=2 cnn=2  AUTO_REPORT   6.9s
+  IDRiD_74.jpg q=PASS     100/100  rule=2 cnn=3  ESCALATE      6.2s
+  IDRiD_75.jpg q=PASS      93/100  rule=2 cnn=3  ESCALATE      6.5s
+  IDRiD_76.jpg q=PASS      97/100  rule=2 cnn=2  ESCALATE      6.5s
+  IDRiD_77.jpg q=PASS      95/100  rule=2 cnn=2  AUTO_REPORT   6.3s
+  IDRiD_78.jpg q=PASS      83/100  rule=2 cnn=2  ESCALATE      6.6s
+  IDRiD_79.jpg q=PASS     100/100  rule=2 cnn=3  AUTO_REPORT   6.4s
+  IDRiD_80.jpg q=PASS      97/100  rule=2 cnn=1  ESCALATE      6.4s
+  IDRiD_81.jpg q=PASS      85/100  rule=2 cnn=2  AUTO_REPORT   6.9s
+
+---------------- integration summary ----------------
+ images                 27
+ quality PASS/ENH/REJ   25 / 2 / 0
+ mean quality score     92.7/100
+ mean end-to-end time   7.4 s
+ dual-evidence agree    51.9%
+ escalation rate        48.1%
+ referable (final)      27 / 27
+-----------------------------------------------------
+
+district model: 100000 patients/yr: expert reads fall 31% (100000 -> 68927 images), staffing 1.7 -> 1.0 FTE, bandwidth down 31%
+
+wrote C:\Users\kanha\Desktop\SIH\matlab\m5_simulink\netra_district.slx
+arrivals 400/day | flagged 68.9% | manual 36000 s/day vs capacity 21600 s/day
+simulating 250 working days...
+after 250 days: manual backlog 167 expert-days, NETRA 0 expert-days
+wrote figures/district_backlog.png
+wrote C:\Users\kanha\Desktop\SIH\results\deck_facts.txt
+wrote results/integration_run.csv

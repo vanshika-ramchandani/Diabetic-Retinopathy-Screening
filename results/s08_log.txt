@@ -1,0 +1,31 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+  IDRiD_55 overlay written
+  IDRiD_56 overlay written
+  IDRiD_57 overlay written
+  IDRiD_58 overlay written
+  IDRiD_59 overlay written
+  IDRiD_60 overlay written
+  IDRiD_61 overlay written
+  IDRiD_62 overlay written
+  IDRiD_63 overlay written
+  IDRiD_64 overlay written
+  IDRiD_65 overlay written
+  IDRiD_66 overlay written
+  IDRiD_67 overlay written
+  IDRiD_68 overlay written
+  IDRiD_69 overlay written
+  IDRiD_70 overlay written
+  IDRiD_71 overlay written
+  IDRiD_72 overlay written
+  IDRiD_73 overlay written
+  IDRiD_74 overlay written
+  IDRiD_75 overlay written
+  IDRiD_76 overlay written
+  IDRiD_77 overlay written
+  IDRiD_78 overlay written
+  IDRiD_79 overlay written
+  IDRiD_80 overlay written
+  IDRiD_81 overlay written
+overlays in C:\Users\kanha\Desktop\SIH\results\overlays  (left = ground truth, right = prediction)

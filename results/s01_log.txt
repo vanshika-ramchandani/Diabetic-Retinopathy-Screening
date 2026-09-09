@@ -1,0 +1,9 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+APTOS cache -> C:\Users\kanha\Desktop\SIH\data\cache\aptos512
+3662 of 3662 still to cache
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 4 workers.
+done in 9.5 min
+cached 3662 / 3662 images

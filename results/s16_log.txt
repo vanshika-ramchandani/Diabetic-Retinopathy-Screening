@@ -1,0 +1,30 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+dual-evidence on 549 sealed APTOS test images
+  50/549  (0.2 min)
+  100/549  (0.3 min)
+  150/549  (0.4 min)
+  200/549  (0.5 min)
+  250/549  (0.7 min)
+  300/549  (0.9 min)
+  350/549  (1.1 min)
+  400/549  (1.3 min)
+  450/549  (1.5 min)
+  500/549  (1.7 min)
+done in 2.0 min
+
+=====================================================================
+  DUAL-EVIDENCE (D2) ON THE SEALED APTOS TEST SPLIT, n = 549
+=====================================================================
+  escalation rate            0.6211  (341 of 549)
+  agreement rate             0.3789
+
+  CNN referable errors       43
+  ...of which escalated      36  (83.7%)   <- D2 catches these
+  ...auto-reported wrong     7  (16.3%)
+
+  referable cases missed by CNN alone        28
+  still missed AND auto-reported after D2    0
+=====================================================================
+wrote results/dual_evidence_aptos.csv
