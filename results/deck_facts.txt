@@ -1,5 +1,5 @@
 # NETRA - measured facts for the SIH deck
-# generated 2026-09-05 21:56 by s14_integration
+# generated 2026-09-21 12:47 by s14_integration
 # Every number below came from a script in matlab/. Nothing here is estimated.
 # If a figure is not in this file it was not measured - do not put it on a slide.
 
@@ -16,6 +16,28 @@ lesion.train_images = 44
 lesion.val_images = 10
 lesion.test_images = 27
 lesion.nv_trainable = false  # no pixel-level NV labels exist in IDRiD or APTOS
+
+[localisation]  # s17_localise, 103 sealed IDRiD "C. Localization" test images
+# Distances are in ORIGINAL image pixels. "DD" = optic-disc diameters,
+# against a reference diameter measured from GT masks, not assumed.
+loc.n_test = 103
+loc.ref_od_diameter_px = 524.6  # median of 54 segmentation-train GT masks
+loc.fit_images = 200  # localisation TRAIN split, disjoint from the above
+loc.laterality_rule_agreement = 1.0000  # field-centroid rule vs GT, on train
+od.mean_px = 42.0
+od.median_px = 34.0
+od.median_dd = 0.0648
+od.within_0p5dd = 1.0000  # 1 optic-disc radius - the usual criterion
+od.within_1dd = 1.0000
+od.detector_fallback_rate = 0.0000
+fovea.mean_px = 100.0
+fovea.median_px = 44.5
+fovea.median_dd = 0.0849
+fovea.within_0p5dd = 0.8835
+fovea.within_1dd = 0.9709
+fovea.offset_dd = 2.479  # measured temporal offset, not assumed
+fovea_given_gt_disc.median_px = 43.4
+fovea_given_gt_disc.within_0p5dd = 0.8835
 
 [dr_grader]  # s11/s12, sealed APTOS test split
 grader.n_test = 549
@@ -60,7 +82,7 @@ d2.silently_missed_after_d2 = 0  # referable cases auto-reported as normal
 d2.cost_validated_at_deployment_resolution = false
 
 [pipeline]
-pipeline.mean_seconds_per_image = 9.99
+pipeline.mean_seconds_per_image = 6.76
 pipeline.integration_images = 27
 
 [district_model]  # districtSim, driven by the rates above

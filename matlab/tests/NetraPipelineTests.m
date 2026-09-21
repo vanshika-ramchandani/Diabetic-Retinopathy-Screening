@@ -238,5 +238,94 @@ classdef NetraPipelineTests < matlab.unittest.TestCase
             tc.verifyEqual(D.netra.reviewed, 0);
             tc.verifyEqual(D.workloadCut, 1);
         end
+
+        % ---------------- localisation -----------------------------------
+        function odCentroidFindsTheDisc(tc)
+            P = zeros(600,800,'single');
+            [X,Y] = meshgrid(1:800,1:600);
+            P((X-500).^2 + (Y-300).^2 <= 60^2) = 0.9;
+            [c, dia, ok] = localiseOD(P, 0.5);
+            tc.verifyTrue(ok);
+            tc.verifyLessThan(hypot(c(1)-500, c(2)-300), 3);
+            tc.verifyLessThan(abs(dia - 120), 6, 'equivalent diameter of a r=60 disc');
+        end
+
+        function odReportsItsOwnFailure(tc)
+            % Nothing above threshold must not silently score as a detection.
+            P = 0.1*ones(400,400,'single');
+            [c, dia, ok] = localiseOD(P, 0.5);
+            tc.verifyFalse(ok, 'the fallback path must be flagged, not hidden');
+            tc.verifyTrue(all(isfinite(c)), 'a point is still returned');
+            tc.verifyTrue(isnan(dia), 'no diameter is claimed when nothing was detected');
+        end
+
+        function odIgnoresSpeckle(tc)
+            % A few stray high pixels are not an optic disc.
+            P = zeros(600,800,'single');
+            P(100,100) = 1; P(101,101) = 1; P(400,700) = 1;
+            [~,~,ok] = localiseOD(P, 0.5);
+            tc.verifyFalse(ok, 'components below the area floor are not discs');
+        end
+
+        function foveaGoesTemporalWithoutALateralityClassifier(tc)
+            % The disc is nasal in both eyes, so the fovea is always on the
+            % side of the disc facing the centre of the retinal field. Same
+            % image, disc mirrored: the fovea must flip with it.
+            [I, M] = tc.syntheticFundus();
+            prm = tc.foveaPrm();
+            dia = 100;
+
+            cL = localiseFovea(I, [200 300], dia, prm, M);   % disc left of centre
+            cR = localiseFovea(I, [600 300], dia, prm, M);   % disc right of centre
+            tc.verifyGreaterThan(cL(1), 200, 'disc left of centre -> fovea to its right');
+            tc.verifyLessThan(cR(1), 600, 'disc right of centre -> fovea to its left');
+        end
+
+        function foveaFindsTheDarkMacula(tc)
+            [I, M] = tc.syntheticFundus();
+            prm = tc.foveaPrm();
+            dia = 100;
+            od  = [200 300];
+            target = [od(1) + prm.dxDD*dia, od(2) + prm.dyDD*dia];
+
+            % Darken a macula-sized patch exactly where the prior points.
+            [X,Y] = meshgrid(1:size(I,2), 1:size(I,1));
+            dark = (X-target(1)).^2 + (Y-target(2)).^2 <= 40^2;
+            for ch = 1:3
+                c = I(:,:,ch); c(dark) = 40; I(:,:,ch) = c;
+            end
+
+            c = localiseFovea(I, od, dia, prm, M);
+            tc.verifyLessThan(hypot(c(1)-target(1), c(2)-target(2)), 0.5*dia);
+        end
+
+        function foveaStaysInsideTheRetinalField(tc)
+            % A prior that points off the retina must not return a point on
+            % the black surround, where "darkest" is meaningless.
+            [I, M] = tc.syntheticFundus();
+            prm = tc.foveaPrm();
+            prm.dxDD = 6;                       % push the prior off the field
+            c = localiseFovea(I, [400 300], 100, prm, M);
+            tc.verifyTrue(all(isfinite(c)));
+            inside = c(1) >= 1 && c(1) <= size(I,2) && c(2) >= 1 && c(2) <= size(I,1);
+            tc.verifyTrue(inside, 'returned point must lie in the frame');
+        end
+    end
+
+    methods (Static)
+        function [I, M] = syntheticFundus()
+            % An 800x600 frame with a centred retinal disc on black.
+            I = zeros(600,800,3,'uint8');
+            [X,Y] = meshgrid(1:800,1:600);
+            disc = (X-400).^2 + (Y-300).^2 <= 280^2;
+            for c = 1:3
+                ch = I(:,:,c); ch(disc) = 170; I(:,:,c) = ch;
+            end
+            M = disc;
+        end
+        function p = foveaPrm()
+            p = struct('dxDD',2.5, 'dyDD',0.3, 'searchDD',1.0, 'closeDD',0.12, ...
+                       'smoothDD',0.12, 'lambda',3, 'scale',1.0, 'fieldC',[400 300]);
+        end
     end
 end

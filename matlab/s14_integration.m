@@ -141,6 +141,38 @@ end
 w('lesion.train_images = 44\nlesion.val_images = 10\nlesion.test_images = 27\n');
 w('lesion.nv_trainable = false  # no pixel-level NV labels exist in IDRiD or APTOS\n\n');
 
+w('[localisation]  # s17_localise, 103 sealed IDRiD "C. Localization" test images\n');
+lf = fullfile(CFG.resultDir,'localisation.mat');
+if isfile(lf)
+    LC = load(lf); L = LC.L;
+    w('# Distances are in ORIGINAL image pixels. "DD" = optic-disc diameters,\n');
+    w('# against a reference diameter measured from GT masks, not assumed.\n');
+    w('loc.n_test = %d\n', L.n);
+    w('loc.ref_od_diameter_px = %.1f  # median of %d segmentation-train GT masks\n', ...
+      L.refDia, L.refDiaN);
+    w('loc.fit_images = %d  # localisation TRAIN split, disjoint from the above\n', L.fitN);
+    w('loc.laterality_rule_agreement = %.4f  # field-centroid rule vs GT, on train\n', L.sideAgree);
+    w('od.mean_px = %.1f\n',   L.od.meanPx);
+    w('od.median_px = %.1f\n', L.od.medianPx);
+    w('od.median_dd = %.4f\n', L.od.medianDD);
+    w('od.within_0p5dd = %.4f  # 1 optic-disc radius - the usual criterion\n', L.od.hit(2));
+    w('od.within_1dd = %.4f\n', L.od.hit(3));
+    w('od.detector_fallback_rate = %.4f\n', L.odFallback);
+    w('fovea.mean_px = %.1f\n',   L.fovea.meanPx);
+    w('fovea.median_px = %.1f\n', L.fovea.medianPx);
+    w('fovea.median_dd = %.4f\n', L.fovea.medianDD);
+    w('fovea.within_0p5dd = %.4f\n', L.fovea.hit(2));
+    w('fovea.within_1dd = %.4f\n',   L.fovea.hit(3));
+    w('fovea.offset_dd = %.3f  # measured temporal offset, not assumed\n', L.prm.dxDD);
+    % Reported separately so disc-detector error and prior error can be told
+    % apart. The predicted-disc row above is the deployable number.
+    w('fovea_given_gt_disc.median_px = %.1f\n',   L.foveaGtOd.medianPx);
+    w('fovea_given_gt_disc.within_0p5dd = %.4f\n', L.foveaGtOd.hit(2));
+else
+    w('# not measured - run s17_localise\n');
+end
+w('\n');
+
 w('[dr_grader]  # s11/s12, sealed APTOS test split\n');
 if ~isempty(Gm)
     R = Gm.R;

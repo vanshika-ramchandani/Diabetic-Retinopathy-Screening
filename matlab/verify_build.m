@@ -46,7 +46,11 @@ need = { fullfile(M,'netra_lesion_net.mat'),   'lesion segmentation net'
          fullfile(F,'district_backlog.png'),   'Simulink backlog figure'
          fullfile(here,'m5_simulink','netra_district.slx'), 'Simulink model'
          fullfile(CFG.root,'ppt','NETRA_SIH2026_PS26038.pptx'), 'deck (pptx)'
-         fullfile(CFG.root,'ppt','NETRA_SIH2026_PS26038.pdf'),  'deck (pdf)' };
+         fullfile(CFG.root,'ppt','NETRA_SIH2026_PS26038.pdf'),  'deck (pdf)'
+         fullfile(R,'localisation.mat'),       'localisation metrics'
+         fullfile(R,'localisation.csv'),       'localisation per-image results'
+         fullfile(M,'localisation_prior.mat'), 'fitted fovea prior'
+         fullfile(F,'localisation.png'),       'localisation figure' };
 for i = 1:size(need,1)
     state = check(state, isfile(need{i,1}), need{i,2}, ...
                   sprintf('missing: %s', need{i,1}));
@@ -75,6 +79,23 @@ state = check(state, isempty(intersect(CFG.trainIds, CFG.testIds)), ...
     sprintf('IDRiD train (%d) and test (%d) disjoint', numel(CFG.trainIds), numel(CFG.testIds)), ...
     'IDRiD train and test overlap');
 
+% The localisation test images are a DIFFERENT IDRiD component with its own
+% numbering, so name-based disjointness proves nothing - IDRiD_001 there is not
+% IDRiD_01 here. The optic-disc half of s17 runs the lesion net, so any shared
+% IMAGE would be scoring a detector on its own training data. Compared by
+% content hash, which is the only comparison that means anything across
+% independently numbered sets.
+if isfolder(CFG.locRoot)
+    segHash = [hashDir(fullfile(CFG.segRoot,'1. Original Images','a. Training Set')); ...
+               hashDir(fullfile(CFG.segRoot,'1. Original Images','b. Testing Set'))];
+    locHash = hashDir(fullfile(CFG.locRoot,'1. Original Images','b. Testing Set'));
+    shared  = intersect(segHash, locHash);
+    state = check(state, isempty(shared), ...
+        sprintf('localisation test (%d) shares no image with the lesion net''s data (%d)', ...
+                numel(locHash), numel(segHash)), ...
+        sprintf('%d localisation TEST images also appear in the segmentation set', numel(shared)));
+end
+
 % ================= 3. facts vs sources ==================================
 section('3. DECK FACTS vs THE FILES THEY CAME FROM');
 facts = readFacts(fullfile(R,'deck_facts.txt'));
@@ -96,6 +117,23 @@ k = Mt.Task == "Exudates (hard)";
 state = factCheck(state, facts, 'dice.exudates_hard', Mt.Dice(find(k,1)));
 k = Mt.Task == "Microaneurysm";
 state = factCheck(state, facts, 'dice.microaneurysm', Mt.Dice(find(k,1)));
+
+lf = fullfile(R,'localisation.mat');
+if isfile(lf)
+    LC = load(lf);
+    state = factCheck(state, facts, 'loc.n_test',       LC.L.n);
+    state = factCheck(state, facts, 'od.median_px',     LC.L.od.medianPx);
+    state = factCheck(state, facts, 'fovea.median_px',  LC.L.fovea.medianPx);
+    state = factCheck(state, facts, 'fovea.within_0p5dd', LC.L.fovea.hit(2));
+    % The per-image CSV must agree with the summary it was summarised from.
+    O = readtable(fullfile(R,'localisation.csv'), TextType='string');
+    state = check(state, abs(median(O.fvDist_px) - LC.L.fovea.medianPx) < 0.05, ...
+        'localisation CSV re-derives the reported fovea median', ...
+        'localisation.csv and localisation.mat disagree');
+    state = check(state, height(O) == LC.L.n, ...
+        sprintf('localisation CSV has one row per test image (%d)', height(O)), ...
+        'localisation CSV row count does not match n_test');
+end
 
 % ================= 4. protocol ==========================================
 section('4. EVALUATION PROTOCOL');
@@ -195,6 +233,25 @@ end
 function line(), fprintf('%s\n', repmat('=',1,74)); end
 function section(s), fprintf('\n--- %s %s\n', s, repmat('-',1,max(0,66-numel(s)))); end
 
+function h = hashDir(d)
+%HASHDIR  MD5 of every .jpg in a directory, as a string array.
+%   Content hashes are the only way to compare two IDRiD components: they
+%   number their images independently, so IDRiD_001 in one is unrelated to
+%   IDRiD_01 in the other.
+h = strings(0,1);
+if ~isfolder(d), return; end
+f = dir(fullfile(d,'*.jpg'));
+md = java.security.MessageDigest.getInstance('MD5');
+for i = 1:numel(f)
+    fid = fopen(fullfile(f(i).folder, f(i).name), 'r');
+    if fid < 0, continue; end
+    b = fread(fid, inf, '*uint8'); fclose(fid);
+    md.reset(); md.update(b);
+    h(end+1,1) = string(lower(reshape(dec2hex(typecast(md.digest(),'uint8'),2)',1,[]))); %#ok<AGROW>
+end
+end
+
+% =========================================================================
 function st = check(st, cond, okMsg, failMsg)
 if cond
     fprintf('  [PASS] %s\n', okMsg); st.pass = st.pass + 1;

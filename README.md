@@ -14,8 +14,8 @@
   <img alt="MATLAB" src="https://img.shields.io/badge/MATLAB-R2024b%2B-orange">
   <img alt="Sensitivity" src="https://img.shields.io/badge/sensitivity-0.9193-brightgreen">
   <img alt="Specificity" src="https://img.shields.io/badge/specificity-0.9540-brightgreen">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-52%20passing-brightgreen">
-  <img alt="Build checks" src="https://img.shields.io/badge/verify__build-44%20checks-blue">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-58%20passing-brightgreen">
+  <img alt="Build checks" src="https://img.shields.io/badge/verify__build-55%20checks-blue">
 </p>
 
 ---
@@ -52,11 +52,13 @@ R.quality.instruction          % what the operator should do about a REJECT
 R.ruleGrade.grade              % ICDR grade derived from counted lesions
 R.cnnGrade.grade               % ICDR grade from ResNet-18
 R.dual.decision                % AUTO_REPORT | ESCALATE
+R.localisation.odCentre        % optic disc centre [x y]
+R.localisation.foveaCentre     % fovea centre [x y]
 R.reportLine                   % the single line a clinician reads
 ```
 
 No retraining is needed to run any of this — the trained weights are committed in
-[`models/`](models/). Mean end-to-end time is **9.99 s/image**, measured over 27 images in `s14`.
+[`models/`](models/). Mean end-to-end time is **6.76 s/image**, measured over 27 images in `s14`.
 
 ---
 
@@ -101,6 +103,40 @@ Haemorrhage flag at 512px region level: accuracy 0.8061, **sensitivity 0.8505**,
 
 <p align="center">
   <img src="figures/triptych.png" alt="raw, enhanced and lesion-overlay views of the same fundus" width="820">
+</p>
+
+### Optic disc / fovea localisation — 103 sealed IDRiD test images
+
+The PS asks for "optic disc/fovea localisation" as one requirement, so both halves get a
+localisation error, not a segmentation score standing in for one.
+
+| structure | mean | median | ≤ 0.25 DD | ≤ 0.5 DD | ≤ 1 DD |
+|---|---|---|---|---|---|
+| **Optic disc** | 42.0 px | **34.0 px** (0.065 DD) | 99.0% | **100.0%** | 100.0% |
+| **Fovea** | 100.0 px | **44.5 px** (0.085 DD) | 82.5% | **88.3%** | 97.1% |
+| Fovea, given the GT disc | 91.9 px | 43.4 px (0.083 DD) | 84.5% | 88.3% | 98.1% |
+
+**DD = optic-disc diameters**, against a reference of **524.6 px** — the median of the 54
+ground-truth disc masks in the segmentation training split. Measured, not assumed. 0.5 DD (one
+optic-disc radius) is the criterion this task is usually quoted against.
+
+The disc reuses the segmentation net's existing channel 5, so it costs one centroid and no second
+model. The fovea has no mask to segment — IDRiD marks it with a single coordinate — so it is an
+anatomical prior: the darkest broad patch of retina at a fitted offset from the disc. That offset
+was **measured on the training split at 2.479 DD**, which is the textbook 2.5 arrived at from the
+data rather than copied into it. Laterality needs no classifier, because the disc is nasal in both
+eyes and the fovea is always on the side facing the field centre — a rule that **agreed with
+ground truth on 200/200** training images. Neither detector used its fallback path on any of the
+103 test images.
+
+**Read the third row against the second.** They are almost identical (88.3% at 0.5 DD either way),
+which says the disc detector is *not* the bottleneck: the ~12% of images outside 0.5 DD are the
+fovea method's own failures, not error inherited from the disc. The gap between the fovea's mean
+(100.0 px) and its median (44.5 px) is the same story — a small tail of hard failures, worst case
+658 px, dragging an otherwise tight distribution.
+
+<p align="center">
+  <img src="figures/localisation.png" alt="disc and fovea localisation error on the sealed test split" width="820">
 </p>
 
 ---
@@ -200,8 +236,10 @@ fundus image
 │ lesion U-Net     │      │ ResNet-18 grader │                    │
 │ MA HE EX SE OD   │      │ ICDR 0–4         │                    │
 └──────────────────┘      └──────────────────┘                    │
-     │ counted lesions           │ CNN grade                      │ Grad-CAM
-     ▼                           ▼                                │
+     │        │                  │ CNN grade                      │ Grad-CAM
+     │        └──► landmarks: disc centroid (ch. 5) + fovea        │
+     │                           │                                 │
+     │ counted lesions           ▼                                 │
 ┌──────────────────┐      ┌──────────────────┐                    │
 │ rule grade       │─────►│ D2 dual evidence │◄───────────────────┘
 │ ICDR + 4-2-1     │      └──────────────────┘
@@ -234,7 +272,7 @@ fundus image
 | `matlab/m3_lesions/` | lesion inference helpers; the net is built by `lib/buildLesionNet.m` |
 | `matlab/m4_grade/` | `ruleGradeICDR.m`, `dualEvidence.m` — **D2**, the second opinion |
 | `matlab/m5_simulink/` | `districtSim.m`, `buildNetraSimulink.m`, `netra_district.slx` — **D3** |
-| `matlab/lib/` | 18 shared primitives: crop, mask, CLAHE, loss, patching, ROC/PR |
+| `matlab/lib/` | shared primitives: crop, mask, CLAHE, loss, patching, ROC/PR, and the disc/fovea localisers (`localiseOD`, `localiseFovea`) |
 | `matlab/app/` | `netraApp.m` — the GUI |
 | `matlab/tests/` | `NetraPipelineTests`, `NetraDataTests`, `NetraModelTests` |
 
@@ -245,8 +283,8 @@ fundus image
 | `netra.m` | launches the GUI, or screens one image if given a path |
 | `netraScreen.m` | the full pipeline on one image, returning the result struct |
 | `netraDetect.m` | lesion segmentation alone |
-| `verify_build.m` | 44 checks — **run this before submitting** |
-| `run_tests.m` | all 52 unit tests |
+| `verify_build.m` | 55 checks — **run this before submitting** |
+| `run_tests.m` | all 58 unit tests |
 
 ---
 
@@ -258,10 +296,11 @@ s01_cache_aptos                % cache the 3,662 APTOS images at 512px
 s11_train_grader               % ResNet-18 DR grader   (~10.6 min on an RTX 4060)
 s12_eval_grader                % open the sealed grader test split — once
 s13_calibrate_quality(400)     % fit the quality gate to 400 real captures
+s17_localise                   % optic disc + fovea, sealed localisation split
 s14_integration                % end-to-end run → results/deck_facts.txt
 s15_deck_figures               % title hero + raw/enhanced/lesion triptych
 s16_dual_evidence_aptos        % measure D2 in-domain on the sealed split
-run_tests                      % 52 tests
+run_tests                      % 58 tests
 ```
 
 | script | does |
@@ -280,6 +319,7 @@ run_tests                      % 52 tests
 | `s14_integration.m` | end-to-end run; writes `results/deck_facts.txt` |
 | `s15_deck_figures.m` | title hero and the raw → enhanced → lesion triptych |
 | `s16_dual_evidence_aptos.m` | measures D2 in-domain on the sealed APTOS split |
+| `s17_localise.m` | fits the fovea prior on train, scores disc + fovea on the sealed split |
 | `s18_report.m` | renders `results/NETRA_results.html` |
 
 `ppt/build_deck.ps1` builds the 6-slide SIH deck. **It reads only `results/deck_facts.txt`** — a
@@ -330,6 +370,20 @@ rather than trusting that they are.
 - **Neovascularisation is not modelled.** No pixel-level annotation for it exists in IDRiD or
   APTOS. `ruleGradeICDR` sets `pdrDetectable = false`, so the system never implies "not PDR."
   FGADR, under a signed data-use agreement, is the route if it is needed.
+- **Vessel segmentation is not built.** Nothing in the pipeline segments the vascular tree, and
+  `data/drive/` is empty — the DRIVE vessel ground truth this project once planned to use was
+  never brought in. This is the main thing standing between `ruleGradeICDR` and the remaining
+  arms of the 4-2-1 rule, which need vessel calibre and IRMA analysis.
+- **The fovea's failure tail is real and is the fovea method's own.** 11.7% of test images land
+  outside 0.5 OD diameters, worst case 658 px. Substituting the ground-truth disc centre barely
+  moves that (88.3% either way), so it is not inherited disc error — it is the darkness prior
+  losing to a dark lesion cluster, a shadowed field, or a macula that is simply not the darkest
+  thing in the window. A learned regressor over the 413 training points is the obvious next step
+  and is not attempted here.
+- **The reference optic-disc diameter is frozen at 524.6 px.** Every "within N DD" figure above is
+  scaled by one constant measured on IDRiD. Every IDRiD image shares a resolution and field of
+  view, so this is sound *on IDRiD* and would need re-deriving per camera before it means anything
+  elsewhere. Disc-relative reporting would have to become per-image to survive that move.
 - **The D2 escalation *cost* is not validated at deployment resolution.** `s16` measures 62.1%
   escalation on APTOS, but those images are cached at 512px — outside the lesion net's native
   resolution regime, where it over-calls (84% fused referable against a 41% true rate). The
@@ -353,8 +407,8 @@ rather than trusting that they are.
 ## Tests and verification
 
 ```matlab
-verify_build           % 44 checks: artifacts, split integrity, facts vs sources, deck
-run_tests              % all 52 unit tests
+verify_build           % 55 checks: artifacts, split integrity, facts vs sources, deck
+run_tests              % all 58 unit tests
 run_tests("pipeline")  % quality gate, ICDR rules, dual evidence, district model
 run_tests("data")      % data integrity + helpers — no trained model needed
 run_tests("model")     % trained-model behaviour
@@ -377,11 +431,20 @@ dual-evidence check that fails to escalate a referable disagreement is a missed 
 | dataset | used for | split |
 |---|---|---|
 | **APTOS 2019** (Kaggle) | ICDR grading, quality calibration | 2,564 train / 549 val / **549 sealed test** |
-| **IDRiD** | lesion segmentation | 44 train / 10 val / **27 sealed test** (official split) |
+| **IDRiD** *A. Segmentation* | lesion segmentation | 44 train / 10 val / **27 sealed test** (official split) |
+| **IDRiD** *C. Localization* | disc + fovea centres | 413 train / **103 sealed test** (official split) |
 
-APTOS training images are committed under `data/aptos/`; the IDRiD segmentation masks live under
-`data/aptos/A. Segmentation/`. Both datasets are used under their respective research licences and
-are not redistributed here beyond what those licences permit.
+APTOS training images are committed under `data/aptos/`; the IDRiD components live under
+`data/aptos/A. Segmentation/` and `data/aptos/C. Localization/`. Both datasets are used under
+their respective research licences and are not redistributed here beyond what those licences
+permit.
+
+The two IDRiD components number their images independently — `IDRiD_001` in *Localization* is not
+`IDRiD_01` in *Segmentation* — so comparing them by name proves nothing about overlap. Because the
+disc half of `s17` runs the lesion net, that overlap had to be settled by content hash:
+**0 of the 103 localisation test images** appear anywhere in the lesion net's training or test
+data. Three of the 413 *training* images do; they affect only the fitted prior, never a reported
+result. `verify_build` re-runs this comparison rather than taking it on trust.
 
 ---
 

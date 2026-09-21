@@ -72,6 +72,7 @@ if S.quality.decision == "REJECT"
     S.enhanced       = I0;
     S.masks          = [];
     S.lesionCounts   = [];
+    S.localisation   = [];
     S.ruleGrade      = [];
     S.cnnGrade       = [];
     S.dual           = [];
@@ -109,6 +110,13 @@ retina = retinalMask(I0);
 RG = ruleGradeICDR(M, retina);
 S.ruleGrade    = RG;
 S.lesionCounts = RG.counts;
+
+% ================= M3b  optic disc / fovea localisation ==================
+% Nearly free: the optic-disc probability channel was computed above, so the
+% disc costs a centroid and the fovea costs one windowed search. Coordinates
+% are in the frame of S.image (retinal-cropped), which is what the overlay and
+% the GUI draw on. Accuracy is reported by s17_localise.
+S.localisation = localiseStructures(I0, P(:,:,5), thr(5), CFG);
 
 % ================= M4a  CNN grade ========================================
 if isempty(grader)
@@ -160,6 +168,39 @@ if opts.verbose, printSummary(S); end
 end
 
 % =========================================================================
+function LOC = localiseStructures(I0, Pod, odThr, CFG)
+%LOCALISESTRUCTURES  Optic-disc centre and fovea centre for one screened image.
+%   The fovea half needs the prior fitted by s17_localise. When that file is
+%   absent the field is still present, with AVAILABLE false and a note saying
+%   what to run - the same contract every other optional stage here uses.
+LOC = struct('odCentre',[NaN NaN], 'odDiameter',NaN, 'odDetected',false, ...
+             'foveaCentre',[NaN NaN], 'refDiameter',NaN, ...
+             'available',false, 'note',"");
+
+[c, dia, ok] = localiseOD(Pod, odThr);
+LOC.odCentre   = c;
+LOC.odDiameter = dia;
+LOC.odDetected = ok;
+
+f = fullfile(CFG.modelDir,'localisation_prior.mat');
+if ~isfile(f)
+    LOC.note = "fovea prior not fitted - run s17_localise";
+    return
+end
+
+try
+    Q = load(f);
+    [mask, fc] = fieldMask(I0);
+    p = Q.prm; p.fieldC = fc;
+    LOC.foveaCentre = localiseFovea(I0, c, Q.refDia.value, p, mask);
+    LOC.refDiameter = Q.refDia.value;
+    LOC.available   = true;
+catch ME
+    LOC.note = "localisation failed: " + string(ME.message);
+end
+end
+
+% =========================================================================
 function printSummary(S)
 fprintf('\n---------------------------------------------------------------\n');
 fprintf(' NETRA screening report\n');
@@ -179,6 +220,12 @@ if S.decisionPath == "REJECTED_AT_QUALITY_GATE"
 end
 c = S.lesionCounts;
 fprintf(' lesions      : MA %d | HE %d | EX %d | SE %d\n', c.MA, c.HE, c.EX, c.SE);
+if isfield(S,'localisation') && ~isempty(S.localisation) && S.localisation.available
+    L = S.localisation;
+    tag = ""; if ~L.odDetected, tag = " [fallback]"; end
+    fprintf(' landmarks    : disc (%.0f, %.0f)%s | fovea (%.0f, %.0f)\n', ...
+        L.odCentre(1), L.odCentre(2), tag, L.foveaCentre(1), L.foveaCentre(2));
+end
 fprintf(' rule grade   : %d (%s)\n', S.ruleGrade.grade, S.ruleGrade.gradeName);
 fprintf('                %s\n', S.ruleGrade.rationale);
 if S.cnnGrade.available

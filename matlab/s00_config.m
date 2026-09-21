@@ -6,6 +6,7 @@ root = fileparts(fileparts(mfilename('fullpath')));
 
 CFG.root        = root;
 CFG.segRoot     = fullfile(root,'data','aptos','A. Segmentation');
+CFG.locRoot     = fullfile(root,'data','aptos','C. Localization');
 CFG.aptosImgDir = fullfile(root,'data','aptos','Train Images');
 CFG.aptosCsv    = fullfile(root,'data','aptos','train.csv');
 
@@ -71,6 +72,22 @@ CFG.tverskyBeta  = 0.7;
 CFG.tverskyGamma = 0.75;
 CFG.bceWeight    = 0.5;
 CFG.chanWeight   = single([3.0 1.5 1.0 1.5 0.5]);   % MA HE EX SE OD
+
+% ---- stage 17: optic disc / fovea localisation --------------------------
+% The PS asks for "optic disc/fovea localisation" as one requirement. The OD
+% half reuses the segmentation net's channel 5; the fovea half has no mask to
+% segment (IDRiD marks it with a single coordinate), so it is an anatomical
+% prior whose offset and search geometry are FITTED on the localisation
+% training split and then applied unchanged to the sealed test split.
+CFG.locFitN      = 200;     % training images used to fit the prior (413 available)
+CFG.foveaGrid.searchDD = [0.6 0.8 1.0 1.2];   % search radius, OD diameters
+CFG.foveaGrid.closeDD  = [0.08 0.12 0.18];    % vessel-removal closing radius
+CFG.foveaGrid.smoothDD = [0.08 0.12 0.18];    % smoothing sigma
+CFG.foveaGrid.lambda   = [0 1 3 8];           % distance-to-prior penalty
+CFG.foveaScale   = 0.25;    % window downscale for the classical fovea search
+% Accuracy criteria, in OD diameters. 1 OD RADIUS (0.5 DD) is the criterion
+% most IDRiD localisation results are quoted against.
+CFG.locCriteriaDD = [0.25 0.5 1.0];
 
 % ---- inference ----------------------------------------------------------
 CFG.stride      = 256;

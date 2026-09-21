@@ -1,0 +1,82 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+
+===== s17  optic disc / fovea localisation =====
+
+reference OD diameter: 524.6 px  (median of 54 IDRiD training masks)
+
+fitting on 200 localisation training images
+  sweeping 144 grid points over 200 images
+  20 40 60 80 100 120 140 160 180 200 
+  swept in 7.7 min
+
+anatomical prior (measured on train, GT disc centres):
+  temporal offset  2.479 OD diameters
+  vertical offset  +0.293 OD diameters (positive = below the disc)
+  laterality rule agreed with GT on 200/200 images (100.0%)
+search geometry (grid-fitted on train):
+  searchDD 0.60 | closeDD 0.08 | smoothDD 0.12 | lambda 3
+  train fovea median error 34.8 px (0.066 OD diameters)
+
+opening the SEALED localisation test split: 103 images
+   10/103  (0.9 min)
+   20/103  (1.5 min)
+   30/103  (2.2 min)
+   40/103  (2.8 min)
+   50/103  (3.5 min)
+   60/103  (4.1 min)
+   70/103  (4.8 min)
+   80/103  (5.4 min)
+   90/103  (6.1 min)
+  100/103  (6.7 min)
+  103/103  (6.9 min)
+test pass complete in 6.9 min
+
+OPTIC DISC  (predicted from the lesion net channel 5)
+  mean      42.0 px  (0.080 OD dia)
+  median    34.0 px  (0.065 OD dia)
+  within 0.25 OD dia ( 131 px):  99.0%
+  within 0.50 OD dia ( 262 px): 100.0%
+  within 1.00 OD dia ( 525 px): 100.0%
+  worst    164.9 px
+
+FOVEA       (predicted disc -> anatomical prior)
+  mean     100.0 px  (0.191 OD dia)
+  median    44.5 px  (0.085 OD dia)
+  within 0.25 OD dia ( 131 px):  82.5%
+  within 0.50 OD dia ( 262 px):  88.3%
+  within 1.00 OD dia ( 525 px):  97.1%
+  worst    658.5 px
+
+FOVEA       (GT disc -> anatomical prior)
+  mean      91.9 px  (0.175 OD dia)
+  median    43.4 px  (0.083 OD dia)
+  within 0.25 OD dia ( 131 px):  84.5%
+  within 0.50 OD dia ( 262 px):  88.3%
+  within 1.00 OD dia ( 525 px):  98.1%
+  worst    656.8 px
+
+optic disc detector fell back to the smoothed peak on 0/103 images
+fovea search fell back to the bare prior on 0/103 images
+
+wrote results/localisation.csv and results/localisation.mat
+wrote figures/localisation.png
+
+ans = 
+
+  struct with fields:
+
+             n: 103
+        refDia: 524.5810
+       refDiaN: 54
+    criteriaDD: [0.2500 0.5000 1]
+           prm: [11 struct]
+          fitN: 200
+     sideAgree: 1
+    odFallback: 0
+    fvFallback: 0
+            od: [11 struct]
+         fovea: [11 struct]
+     foveaGtOd: [11 struct]
+
