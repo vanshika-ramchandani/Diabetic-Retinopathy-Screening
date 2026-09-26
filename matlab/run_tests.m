@@ -4,11 +4,13 @@ function results = run_tests(which)
 %   run_tests("data")   data integrity + helpers (no trained model needed)
 %   run_tests("model")  trained-model behaviour
 %   run_tests("pipeline") quality gate, ICDR rules, dual evidence, district model
+%   run_tests("vessel") DRIVE integrity, FOV derivation, split leakage
 if nargin < 1, which = "all"; end
 here = fileparts(mfilename('fullpath'));
 addpath(here, fullfile(here,'lib'), fullfile(here,'tests'), ...
         fullfile(here,'m1_quality'), fullfile(here,'m2_enhance'), ...
-        fullfile(here,'m4_grade'), fullfile(here,'m5_simulink'));
+        fullfile(here,'m4_grade'), fullfile(here,'m5_simulink'), ...
+        fullfile(here,'m6_vessels'));
 
 import matlab.unittest.TestSuite
 import matlab.unittest.TestRunner
@@ -23,6 +25,9 @@ if which == "all" || which == "model"
 end
 if which == "all" || which == "pipeline"
     suite = [suite, TestSuite.fromClass(?NetraPipelineTests)];
+end
+if which == "all" || which == "vessel"
+    suite = [suite, TestSuite.fromClass(?NetraVesselTests)];
 end
 
 runner = TestRunner.withNoPlugins;

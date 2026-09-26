@@ -141,6 +141,35 @@ fovea method's own failures, not error inherited from the disc. The gap between 
 
 ---
 
+### Vessel segmentation — 20 sealed DRIVE test images
+
+Trained on DRIVE (16 fit / 4 validation), threshold frozen on validation before the test set was
+opened. Every figure is computed **inside the field of view**: DRIVE ships no FOV masks in this
+copy so they are derived by `retinalMask`, and the field covers only 68.5% of the frame — scoring
+the whole rectangle would hand the model ~34.5% of its true negatives for free.
+
+| metric | value | | metric | value |
+|---|---|---|---|---|
+| **ROC-AUC** | **0.9738** | | GlobalAccuracy | 0.9502 |
+| **Dice** | **0.8110** | | MeanAccuracy | 0.9046 |
+| Sensitivity | 0.8453 | | MeanIoU | 0.8135 |
+| Specificity | 0.9658 | | WeightedIoU | 0.9110 |
+| Precision | 0.7832 | | MeanBFScore | 0.9586 |
+| IoU (vessel) | 0.6828 | | MeanBFScore @ 2px | 0.9111 |
+
+Read the right-hand column with care. `MeanIoU` averages the vessel IoU (0.6828) with the
+background IoU (0.9442), and background is ~87% of the field; `WeightedIoU` weights by class
+frequency and is therefore almost entirely a report on the background class. **The honest
+vessel number is IoU 0.6828.** `MeanBFScore` likewise depends on its tolerance, which defaults to
+0.75% of the image diagonal — ~6 px here, wider than most vessels in the image — so the strict
+2 px figure is given beside it.
+
+<p align="center">
+  <img src="results/overlays/vessels/drive_01_blend.png" alt="original, predicted vessels and ground truth for DRIVE test image 01" width="900">
+</p>
+
+---
+
 ## The three things that are not "a CNN that classifies fundus images"
 
 ### D1 — it refuses to guess
@@ -272,9 +301,10 @@ fundus image
 | `matlab/m3_lesions/` | lesion inference helpers; the net is built by `lib/buildLesionNet.m` |
 | `matlab/m4_grade/` | `ruleGradeICDR.m`, `dualEvidence.m` — **D2**, the second opinion |
 | `matlab/m5_simulink/` | `districtSim.m`, `buildNetraSimulink.m`, `netra_district.slx` — **D3** |
+| `matlab/m6_vessels/` | `segmentVessels.m`, `vesselSanityCheck.m` — the vascular tree |
 | `matlab/lib/` | shared primitives: crop, mask, CLAHE, loss, patching, ROC/PR, and the disc/fovea localisers (`localiseOD`, `localiseFovea`) |
 | `matlab/app/` | `netraApp.m` — the GUI |
-| `matlab/tests/` | `NetraPipelineTests`, `NetraDataTests`, `NetraModelTests` |
+| `matlab/tests/` | `NetraPipelineTests`, `NetraDataTests`, `NetraModelTests`, `NetraVesselTests` |
 
 ### Entry points
 
@@ -283,8 +313,10 @@ fundus image
 | `netra.m` | launches the GUI, or screens one image if given a path |
 | `netraScreen.m` | the full pipeline on one image, returning the result struct |
 | `netraDetect.m` | lesion segmentation alone |
+| `m6_vessels/segmentVessels.m` | vessel segmentation alone |
+| `m6_vessels/vesselSanityCheck.m` | one-image look: original / predicted / ground truth |
 | `verify_build.m` | 55 checks — **run this before submitting** |
-| `run_tests.m` | all 58 unit tests |
+| `run_tests.m` | all 65 unit tests |
 
 ---
 
@@ -300,7 +332,12 @@ s17_localise                   % optic disc + fovea, sealed localisation split
 s14_integration                % end-to-end run → results/deck_facts.txt
 s15_deck_figures               % title hero + raw/enhanced/lesion triptych
 s16_dual_evidence_aptos        % measure D2 in-domain on the sealed split
-run_tests                      % 58 tests
+s19_cache_vessels              % split DRIVE, derive FOV masks, cache patches
+s20_train_vessels              % vessel net         (~24.8 min on an RTX 4060)
+s21_eval_vessels               % tune on val, then open the sealed DRIVE test — once
+s22_vessel_semantic_metrics    % GlobalAccuracy / MeanIoU / BFScore set
+s23_vessel_figures(inf,"blend")% figures for all 20 sealed test images
+run_tests                      % 65 tests
 ```
 
 | script | does |
@@ -321,6 +358,11 @@ run_tests                      % 58 tests
 | `s16_dual_evidence_aptos.m` | measures D2 in-domain on the sealed APTOS split |
 | `s17_localise.m` | fits the fovea prior on train, scores disc + fovea on the sealed split |
 | `s18_report.m` | renders `results/NETRA_results.html` |
+| `s19_cache_vessels.m` | DRIVE split (16 fit / 4 val / 20 sealed), derived FOV masks, 2,048 patches |
+| `s20_train_vessels.m` | vessel net — ResNet-18 U-Net at 256px, batch 16, 40 epochs, lr 3e-4 |
+| `s21_eval_vessels.m` | freezes the threshold on val, then scores the sealed DRIVE test set |
+| `s22_vessel_semantic_metrics.m` | MATLAB `evaluateSemanticSegmentation` metric set for the vessel net |
+| `s23_vessel_figures.m` | original / predicted / ground truth figures — `heat`, `blend` or `binary` |
 
 `ppt/build_deck.ps1` builds the 6-slide SIH deck. **It reads only `results/deck_facts.txt`** — a
 fact no script measured renders as `n/a`, never as a plausible guess.
@@ -370,10 +412,25 @@ rather than trusting that they are.
 - **Neovascularisation is not modelled.** No pixel-level annotation for it exists in IDRiD or
   APTOS. `ruleGradeICDR` sets `pdrDetectable = false`, so the system never implies "not PDR."
   FGADR, under a signed data-use agreement, is the route if it is needed.
-- **Vessel segmentation is not built.** Nothing in the pipeline segments the vascular tree, and
-  `data/drive/` is empty — the DRIVE vessel ground truth this project once planned to use was
-  never brought in. This is the main thing standing between `ruleGradeICDR` and the remaining
-  arms of the 4-2-1 rule, which need vessel calibre and IRMA analysis.
+- **Vessel segmentation is built, but it does not close the 4-2-1 rule.** `s19`-`s21` train a
+  ResNet-18 U-Net on DRIVE and `segmentVessels` returns the vascular tree (sealed-test AUC 0.974,
+  Dice 0.811, sensitivity 0.845 — all FOV-restricted; see `results/vessel_metrics.csv`). What it
+  returns is a *binary* tree: no artery/vein classification and no calibre measurement. The
+  venous-beading arm needs A/V labels DRIVE does not carry (RITE or HRF do), and the IRMA arm has
+  no public pixel-level dataset at all — the same wall as neovascularisation. So `ruleGradeICDR`
+  still reaches grade 3 by the haemorrhage arm alone, and an eye with beading or IRMA but
+  sub-threshold haemorrhages is still under-graded to 2. It stays referable either way, because
+  `CFG.referableFrom = 2`, so the screening decision is unaffected — the reported severity is not.
+- **The vessel net is trained on 20 images and shows it.** Validation loss bottomed at epoch 15
+  (0.324) and rose to 0.347 by epoch 40 while training loss kept falling to 0.168.
+  `OutputNetwork = "best-validation"` means the saved net is the epoch-15 one, so the result is
+  sound, but `CFG.vesselEpochs = 40` is roughly twice what the data supports. The binding
+  constraint is 16 training images, not the architecture.
+- **DRIVE ships no FOV masks in this copy, so they are derived.** `readDriveSample` calls
+  `retinalMask`; the derivation leaves at most 44 labelled vessel pixels outside the mask (mean 11,
+  asserted in `NetraVesselTests`). Every vessel metric is computed inside that mask, because the
+  field covers only 68.5% of the frame and scoring the whole rectangle would hand the model ~34.5%
+  of its true negatives for free.
 - **The fovea's failure tail is real and is the fovea method's own.** 11.7% of test images land
   outside 0.5 OD diameters, worst case 658 px. Substituting the ground-truth disc centre barely
   moves that (88.3% either way), so it is not inherited disc error — it is the darkness prior

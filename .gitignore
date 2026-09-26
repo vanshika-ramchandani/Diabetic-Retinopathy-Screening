@@ -1,0 +1,6 @@
+# Per-epoch training checkpoints. trainnet writes one net per epoch so a crash
+# mid-run is recoverable (resume_from_checkpoint); they are worthless once the
+# run finishes, and they are enormous - the vessel run alone leaves 2.0 GB.
+# The final net is saved separately to models/netra_*.mat, which IS tracked.
+models/checkpoints/
+models/checkpoints_vessel/

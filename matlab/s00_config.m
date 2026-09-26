@@ -89,6 +89,37 @@ CFG.foveaScale   = 0.25;    % window downscale for the classical fovea search
 % most IDRiD localisation results are quoted against.
 CFG.locCriteriaDD = [0.25 0.5 1.0];
 
+% ---- stages 19-21: vessel segmentation (DRIVE) --------------------------
+% Separate track from the lesion net. DRIVE is 40 images at 584x565, so this
+% is a SMALL-DATA problem: the split discipline matters more than the model.
+%   train 21..40 (official DRIVE training set) -> 16 fit + 4 validation
+%   test  01..20 (official DRIVE test set)     -> SEALED until s21
+% Opening 01..20 for threshold tuning would leave no held-out set at all, so
+% the threshold is tuned on the 4 validation images and then frozen.
+CFG.driveRoot     = fullfile(root,'data','drive');
+CFG.vesselCache   = fullfile(CFG.cacheDir,'vessels');
+CFG.driveTrainIds = 21:40;
+CFG.driveTestIds  = 1:20;
+CFG.driveValN     = 4;        % held out of the 20 training images
+
+% 256px patches, not the lesion net's 512. A 512 crop from a 584x565 frame has
+% almost no translation freedom left; 256 gives real crop diversity out of 16
+% images and still spans ~8x the widest vessel, so context is not the limit.
+CFG.vesselSize    = 256;
+CFG.vesselStride  = 128;
+CFG.vesselBatch   = 16;
+CFG.vesselEpochs  = 40;
+CFG.vesselLR      = 3e-4;
+CFG.vesselLrEnc   = 1e-4;
+CFG.vesselPatchesPerImage = 128;
+CFG.vesselMinFov  = 0.50;     % discard crops that are mostly outside the field
+
+% DRIVE ships no FOV masks in this copy, so they are DERIVED (retinalMask).
+% Every vessel metric is computed inside that mask: the circular field covers
+% only ~68.5% of the frame, so scoring the whole rectangle would hand the model
+% ~34.5% of its true negatives for free and inflate specificity and accuracy.
+CFG.vesselFovEval = true;
+
 % ---- inference ----------------------------------------------------------
 CFG.stride      = 256;
 CFG.minCompSize = [3 10 10 10 50];   % px, per channel
