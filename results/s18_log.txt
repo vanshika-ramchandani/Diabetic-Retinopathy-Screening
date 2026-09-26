@@ -1,0 +1,35 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+
+======================================================================================
+  LESION-LEVEL RESULTS - 27 sealed IDRiD test images
+======================================================================================
+Task                   Output                    Dice     IoU Precision  Recall    AUPR
+--------------------------------------------------------------------------------------
+Microaneurysm          Pixel mask              0.5185  0.3500    0.4828  0.5600  0.1990
+Exudates (hard)        Pixel mask              0.7315  0.5767    0.7444  0.7190  0.5948
+Exudates (soft)        Pixel mask              0.5460  0.3755    0.7126  0.4425  0.3330
+Haemorrhage - mask     Pixel mask              0.5904  0.4189    0.6210  0.5627  0.4697
+
+Task                   Output                 Accuracy Precision  Recall    Spec  ROC-AUC
+--------------------------------------------------------------------------------------
+Haemorrhage - flag     Binary (512px region)    0.8061    0.7109  0.8505  0.7776   0.8762
+Haemorrhage - flag     Binary (whole image)     1.0000    1.0000  1.0000   undef    undef
+
+Neovascularisation     -                      not trainable - no pixel-level labels exist in IDRiD or APTOS
+
+======================================================================================
+  REFERABLE DR (ICDR 2+) - sealed APTOS test split
+======================================================================================
+  n = 549   threshold 0.478 (fitted on validation)
+  Sensitivity 0.9193   Specificity 0.9540   Precision 0.9318
+  Accuracy    0.9399   ROC-AUC     0.9834
+  TP 205  FP 15  TN 311  FN 18
+======================================================================================
+
+building contact sheet from 27 overlays...
+wrote figures/overlay_contact_sheet.png  (1952 x 2483)
+
+wrote C:\Users\kanha\Desktop\SIH\results\NETRA_results.html
+open it with:  winopen('C:\Users\kanha\Desktop\SIH\results\NETRA_results.html')

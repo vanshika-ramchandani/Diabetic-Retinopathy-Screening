@@ -173,6 +173,44 @@ else
 end
 w('\n');
 
+w('[vessel_segmentation]  # s21/s22, 20 sealed DRIVE test images\n');
+vf = fullfile(CFG.resultDir,'vessel_metrics.mat');
+sf = fullfile(CFG.resultDir,'vessel_semantic_metrics.mat');
+if isfile(vf) && isfile(sf)
+    VM = load(vf); SM = load(sf);
+    w('# Every figure is computed INSIDE the field of view. DRIVE ships no FOV\n');
+    w('# masks in this copy, so they are derived by retinalMask; the field is\n');
+    w('# 68.5%% of the frame, so scoring the whole rectangle would hand the\n');
+    w('# model ~34.5%% of its true negatives for free.\n');
+    w('vessel.n_test = 20  # DRIVE 01-20, the official test set\n');
+    w('vessel.fit_images = 16\nvessel.val_images = 4\n');
+    w('vessel.threshold = %.2f  # tuned on val, frozen before the test set was opened\n', SM.thr);
+    w('# Per-image means over the 20 test images (s21).\n');
+    w('vessel.dice = %.4f\n',        VM.mu(5));
+    w('vessel.iou = %.4f\n',         VM.mu(6));
+    w('vessel.sensitivity = %.4f\n', VM.mu(1));
+    w('vessel.specificity = %.4f\n', VM.mu(2));
+    w('vessel.precision = %.4f\n',   VM.mu(3));
+    w('vessel.accuracy = %.4f\n',    VM.mu(4));
+    w('vessel.roc_auc = %.4f\n',     VM.mu(8));
+    w('# MATLAB evaluateSemanticSegmentation (s22), pixel-pooled across all 20\n');
+    w('# images, so it differs slightly from the per-image means above.\n');
+    w('vessel.global_accuracy = %.4f\n', SM.Sum.GlobalAccuracy);
+    w('vessel.mean_accuracy = %.4f\n',   SM.Sum.MeanAccuracy);
+    w('vessel.mean_iou = %.4f  # AVERAGED WITH BACKGROUND - not a vessel score\n', SM.Sum.MeanIoU);
+    w('vessel.weighted_iou = %.4f  # frequency-weighted, almost entirely background\n', SM.Sum.WeightedIoU);
+    w('vessel.mean_bfscore = %.4f  # tolerance 6.1 px = 0.75%% of the diagonal\n', SM.Sum.MeanBFScore);
+    w('vessel.mean_bfscore_2px = %.4f  # strict 2 px tolerance\n', SM.Sum.MeanBFScore_2px);
+    w('vessel.recall_pooled = %.4f\n',    SM.Sum.Recall);
+    w('vessel.precision_pooled = %.4f\n', SM.Sum.Precision);
+    w('vessel.iou_pooled = %.4f  # THE honest vessel number\n', SM.Sum.IoU);
+    w('vessel.av_classification = false  # DRIVE carries no artery/vein labels\n');
+    w('vessel.calibre_measured = false   # so the 4-2-1 beading and IRMA arms stay open\n');
+else
+    w('# not measured - run s21_eval_vessels then s22_vessel_semantic_metrics\n');
+end
+w('\n');
+
 w('[dr_grader]  # s11/s12, sealed APTOS test split\n');
 if ~isempty(Gm)
     R = Gm.R;
@@ -291,6 +329,7 @@ w('status.dual_evidence = built+measured\n');
 w('status.gui = built\n');
 w('status.simulink = built + simulated (core Simulink)\n');
 w('status.simevents = licensed but NOT installed on this machine\n');
+w('status.vessel_segmentation = trained+evaluated (DRIVE, binary tree only)\n');
 w('status.neovascularisation = not built - no labels exist\n');
 fclose(fid);
 fprintf('wrote %s\n', F);

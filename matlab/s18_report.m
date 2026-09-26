@@ -177,6 +177,40 @@ w(['<div class="note"><b>Neovascularisation — not trainable.</b> No pixel-leve
    '<code>ruleGradeICDR</code> exposes <code>pdrDetectable = false</code> so silence is never ' ...
    'mistaken for a negative.</div>\n']);
 
+% vessel segmentation (DRIVE) - separate net, separate sealed test set
+vsf = fullfile(R,'vessel_semantic_metrics.mat');
+vmf = fullfile(R,'vessel_metrics.mat');
+if isfile(vsf) && isfile(vmf)
+    SM = load(vsf); VM = load(vmf);
+    w('<h2>Vessel segmentation &mdash; 20 sealed DRIVE test images</h2>\n');
+    w(['<p>A second, independent network: 1-channel ResNet-18 U-Net trained on DRIVE. It shares ' ...
+       'no weights with the lesion net and is evaluated on its own sealed split. Every figure ' ...
+       'below is computed <b>inside the field of view</b>.</p>\n']);
+    w('<table>\n<tr><th>metric</th><th>value</th><th>metric</th><th>value</th></tr>\n');
+    rows = { 'Threshold',      sprintf('%.2f', SM.thr),               'GlobalAccuracy', sprintf('%.4f', SM.Sum.GlobalAccuracy)
+             'ROC-AUC',        sprintf('%.4f', VM.mu(8)),             'MeanAccuracy',   sprintf('%.4f', SM.Sum.MeanAccuracy)
+             'Dice',           sprintf('%.4f', VM.mu(5)),             'MeanIoU',        sprintf('%.4f', SM.Sum.MeanIoU)
+             'Recall',         sprintf('%.4f', SM.Sum.Recall),        'WeightedIoU',    sprintf('%.4f', SM.Sum.WeightedIoU)
+             'Precision',      sprintf('%.4f', SM.Sum.Precision),     'MeanBFScore',    sprintf('%.4f', SM.Sum.MeanBFScore)
+             'IoU (vessel)',   sprintf('%.4f', SM.Sum.IoU),           'MeanBFScore@2px',sprintf('%.4f', SM.Sum.MeanBFScore_2px) };
+    for i = 1:size(rows,1)
+        w('<tr><td>%s</td><td><b>%s</b></td><td>%s</td><td>%s</td></tr>\n', rows{i,:});
+    end
+    w('</table>\n');
+    w(['<div class="warn"><b>The right-hand column is not a vessel score.</b> ' ...
+       '<code>MeanIoU</code> averages the vessel IoU (0.6828) with the background IoU (0.9442), ' ...
+       'and background is ~87%% of the field; <code>WeightedIoU</code> weights by class frequency ' ...
+       'and is therefore almost entirely a report on the background class. The honest vessel ' ...
+       'number is <b>IoU 0.6828</b>. <code>MeanBFScore</code> likewise defaults to a tolerance of ' ...
+       '0.75%% of the image diagonal &mdash; ~6&nbsp;px here, wider than most vessels in the ' ...
+       'image &mdash; so the strict 2&nbsp;px figure sits beside it.</div>\n']);
+    w(['<div class="note"><b>Binary tree only.</b> No artery/vein classification and no calibre ' ...
+       'measurement, so this does not close the venous-beading or IRMA arms of 4-2-1. ' ...
+       'Nothing here reaches the DR grade.</div>\n']);
+    vfig = fullfile(Fdir,'vessel_metrics.png');
+    if isfile(vfig), w('<p><img src="%s"></p>\n', strrep(vfig,'\\','/')); end
+end
+
 % optic disc / fovea localisation
 lf = fullfile(R,'localisation.mat');
 if isfile(lf)
