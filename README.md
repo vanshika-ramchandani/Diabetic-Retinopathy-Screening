@@ -55,6 +55,11 @@ R.dual.decision                % AUTO_REPORT | ESCALATE
 R.localisation.odCentre        % optic disc centre [x y]
 R.localisation.foveaCentre     % fovea centre [x y]
 R.reportLine                   % the single line a clinician reads
+
+S = netraSegment('path/to/fundus.jpg', true);   % Module 2: lesions + vessels, one figure
+S.lesions.counts               % [MA HE EX SE OD]
+S.vessels.areaFrac             % vessel area as a fraction of the retinal field
+S.vessels.inDomain             % false when the camera is outside DRIVE's regime
 ```
 
 No retraining is needed to run any of this — the trained weights are committed in
@@ -506,10 +511,11 @@ rather than trusting that they are.
 
 ```matlab
 verify_build           % 55 checks: artifacts, split integrity, facts vs sources, deck
-run_tests              % all 58 unit tests
+run_tests              % all 65 unit tests
 run_tests("pipeline")  % quality gate, ICDR rules, dual evidence, district model
 run_tests("data")      % data integrity + helpers — no trained model needed
 run_tests("model")     % trained-model behaviour
+run_tests("vessel")    % DRIVE integrity, derived-FOV containment, split leakage
 ```
 
 `verify_build` is the one to run before submitting. It does **not** trust
@@ -517,6 +523,12 @@ run_tests("model")     % trained-model behaviour
 so a hand-edited fact or a stale facts file is caught. It also re-derives the test metrics from the
 raw saved scores, confirms the three grader splits are disjoint, and checks that the deck has
 exactly 6 slides with no `n/a` left on any of them.
+
+`NetraVesselTests` carries the checks that protect the vessel track's two load-bearing
+assumptions: that the **derived** FOV masks do not crop real vessel away (asserted at <200 px per
+image against ground truth), and that `vesselLoss` genuinely ignores everything outside them — two
+targets identical inside the field and opposite outside it must score the same, or the masking is
+decorative. It also re-checks that the fit, validation and sealed DRIVE splits stay disjoint.
 
 `NetraPipelineTests` is GPU-free and dataset-free on purpose: it tests decision *logic*, which is
 where a screening system does harm when it is wrong. A grader two points off is a worse model; a
@@ -531,11 +543,19 @@ dual-evidence check that fails to escalate a referable disagreement is a missed 
 | **APTOS 2019** (Kaggle) | ICDR grading, quality calibration | 2,564 train / 549 val / **549 sealed test** |
 | **IDRiD** *A. Segmentation* | lesion segmentation | 44 train / 10 val / **27 sealed test** (official split) |
 | **IDRiD** *C. Localization* | disc + fovea centres | 413 train / **103 sealed test** (official split) |
+| **DRIVE** | vessel segmentation | 16 train / 4 val / **20 sealed test** (official split) |
 
 APTOS training images are committed under `data/aptos/`; the IDRiD components live under
 `data/aptos/A. Segmentation/` and `data/aptos/C. Localization/`. Both datasets are used under
 their respective research licences and are not redistributed here beyond what those licences
 permit.
+
+DRIVE is committed under `data/drive/`, 40 images at 584×565 with observer-1 tracings. Its
+official split is 21–40 train and 01–20 test, so the 4 validation images are carved out of the
+training 20 and **01–20 stay sealed** — tuning the threshold on them would have left the track with
+no held-out data at all. This copy ships no `mask/` folder, so the FOV masks are derived by
+`retinalMask` rather than supplied; `NetraVesselTests` asserts the derivation leaves at most 200
+labelled vessel pixels outside the mask on every test image (observed maximum 44, mean 11).
 
 The two IDRiD components number their images independently — `IDRiD_001` in *Localization* is not
 `IDRiD_01` in *Segmentation* — so comparing them by name proves nothing about overlap. Because the
