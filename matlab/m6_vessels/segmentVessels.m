@@ -18,9 +18,16 @@ function R = segmentVessels(image, showFig)
 %   4-2-1 rule that ruleGradeICDR still leaves open. Those need A/V labels
 %   (DRIVE has none - RITE or HRF do) on top of this tree.
 %
-%   The model is trained on DRIVE: 45-degree field, 584x565, one camera. Any
-%   other camera is out of its training distribution and the FOV-relative
-%   numbers below would need re-deriving before they mean anything.
+%   SCALE NORMALISATION - why this is not optional. The model is trained on
+%   DRIVE, whose retinal field is ~536 px across. A vessel is 1-5 px wide
+%   there. On an IDRiD image the same vessel is ~5x wider in pixels, and a
+%   convolutional net has no way to know that - fed IDRiD at native size it
+%   returns 0.8% vessel where the truth is ~13%, i.e. it fails almost
+%   completely. So the image is rescaled so its FIELD DIAMETER matches DRIVE's
+%   before prediction, and the resulting mask is scaled back. R.scale records
+%   the factor used. This fixes the resolution regime; it does not fix camera
+%   colour or optics, so a non-DRIVE camera is still outside the training
+%   distribution and R.inDomain stays the honest flag to check.
 if nargin < 2, showFig = false; end
 here = fileparts(fileparts(mfilename('fullpath')));
 addpath(here, fullfile(here,'lib'));
@@ -40,8 +47,20 @@ if ischar(image) || isstring(image), I = imread(image); else, I = image; end
 if size(I,3) == 1, I = repmat(I,1,1,3); end
 
 F = retinalMask(I);
-P = slidingWindowPredict(net, I, V);
-P = P(:,:,1);
+
+% Rescale so the retinal field is DRIVE-sized, predict there, then map back.
+dia   = sqrt(4*nnz(F)/pi);
+scale = CFG.vesselRefDia / max(dia, 1);
+if abs(log(scale)) > 0.05
+    Is = imresize(I, scale);
+    Ps = slidingWindowPredict(net, Is, V);
+    P  = imresize(Ps(:,:,1), [size(I,1) size(I,2)]);
+else
+    scale = 1;
+    P = slidingWindowPredict(net, I, V);
+    P = P(:,:,1);
+end
+P = min(max(P,0),1);
 
 % Outside the field the input is black frame the net never trained on, so its
 % output there is meaningless rather than merely wrong. Masking is not cosmetic.
@@ -53,6 +72,11 @@ R.prob      = P;
 R.fov       = F;
 R.areaFrac  = nnz(M) / max(nnz(F),1);
 R.threshold = thr;
+R.scale     = scale;
+R.fieldDia  = dia;
+% DRIVE-like optics, not merely DRIVE-like size. Scale is corrected above;
+% this flag is about the camera the net has never seen.
+R.inDomain  = abs(log(scale)) < 0.35;
 
 if showFig
     f = figure('Name','NETRA vessels'); lightFigure(f);

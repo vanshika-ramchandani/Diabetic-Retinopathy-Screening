@@ -120,6 +120,11 @@ CFG.vesselMinFov  = 0.50;     % discard crops that are mostly outside the field
 % ~34.5% of its true negatives for free and inflate specificity and accuracy.
 CFG.vesselFovEval = true;
 
+% DRIVE's retinal field diameter in pixels, sqrt(4*area/pi) over the derived
+% FOV masks. segmentVessels rescales any input to this before predicting, so
+% the net always sees vessels at the width it was trained on.
+CFG.vesselRefDia  = 536;
+
 % ---- inference ----------------------------------------------------------
 CFG.stride      = 256;
 CFG.minCompSize = [3 10 10 10 50];   % px, per channel

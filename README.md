@@ -89,7 +89,35 @@ Split: 2,564 train / 549 validation / 549 sealed test, stratified, `rng(42)`. Te
   <img src="figures/grader_confusion.png" alt="5-class ICDR confusion matrix" width="47%">
 </p>
 
-### Lesion segmentation — 27 sealed IDRiD test images
+### Module 2 — lesion detection and retinal structure segmentation
+
+Module 2 asks for two different things, so it is built as **two independent networks**, each with
+its own training data, its own sealed test set and its own weights file. They are not fused and
+neither is a stage of the other:
+
+| | network | trained on | weights | sealed test |
+|---|---|---|---|---|
+| **Lesions** | 5-channel ResNet-18 U-Net, 512px | IDRiD, 4288×2848 | `netra_lesion_net.mat` | 27 IDRiD images |
+| **Structure** | 1-channel ResNet-18 U-Net, 256px | DRIVE, 584×565 | `netra_vessel_net.mat` | 20 DRIVE images |
+
+`netraSegment.m` runs both on one image and presents them as a single result. It is a
+**presentation wrapper, not a fusion step** — nothing in it reaches the DR grade, which still comes
+from the lesion channels alone via `ruleGradeICDR`. Combining them into a severity decision would
+need artery/vein labels and vessel calibre that neither model produces, and it would invalidate the
+D2 dual-evidence numbers already measured in `results/`.
+
+<p align="center">
+  <img src="figures/module2_idrid60.png" alt="fundus, lesion overlay and vessel overlay for IDRiD_60" width="900">
+</p>
+
+```matlab
+S = netraSegment('data/drive/val/input/01.tif', true);
+%   S.lesions.counts    [MA HE EX SE OD]
+%   S.vessels.areaFrac  vessel area as a fraction of the retinal field
+%   S.vessels.inDomain  false when the camera is outside DRIVE's regime
+```
+
+#### Lesion segmentation — 27 sealed IDRiD test images
 
 | lesion | Dice | IoU | Precision | Recall | AUPR |
 |---|---|---|---|---|---|
@@ -105,7 +133,41 @@ Haemorrhage flag at 512px region level: accuracy 0.8061, **sensitivity 0.8505**,
   <img src="figures/triptych.png" alt="raw, enhanced and lesion-overlay views of the same fundus" width="820">
 </p>
 
-### Optic disc / fovea localisation — 103 sealed IDRiD test images
+#### Vessel segmentation — 20 sealed DRIVE test images
+
+Trained on DRIVE (16 fit / 4 validation), threshold frozen on validation before the test set was
+opened. Every figure is computed **inside the field of view**: DRIVE ships no FOV masks in this
+copy so they are derived by `retinalMask`, and the field covers only 68.5% of the frame — scoring
+the whole rectangle would hand the model ~34.5% of its true negatives for free.
+
+| metric | value | | metric | value |
+|---|---|---|---|---|
+| **ROC-AUC** | **0.9738** | | GlobalAccuracy | 0.9502 |
+| **Dice** | **0.8110** | | MeanAccuracy | 0.9046 |
+| Sensitivity | 0.8453 | | MeanIoU | 0.8135 |
+| Specificity | 0.9658 | | WeightedIoU | 0.9110 |
+| Precision | 0.7832 | | MeanBFScore | 0.9586 |
+| IoU (vessel) | 0.6828 | | MeanBFScore @ 2px | 0.9111 |
+
+Read the right-hand column with care. `MeanIoU` averages the vessel IoU (0.6828) with the
+background IoU (0.9442), and background is ~87% of the field; `WeightedIoU` weights by class
+frequency and is therefore almost entirely a report on the background class. **The honest
+vessel number is IoU 0.6828.** `MeanBFScore` likewise depends on its tolerance, which defaults to
+0.75% of the image diagonal — ~6 px here, wider than most vessels in the image — so the strict
+2 px figure is given beside it.
+
+<p align="center">
+  <img src="results/overlays/vessels/drive_01_blend.png" alt="original, predicted vessels and ground truth for DRIVE test image 01" width="900">
+</p>
+
+**Cross-camera scale.** DRIVE's retinal field is ~536 px across; IDRiD's is ~3,280. A vessel is
+therefore ~6× wider in pixels on IDRiD, and fed an IDRiD image at native size the net returns 0.8%
+vessel where the truth is ~13% — it fails almost completely. `segmentVessels` rescales any input so
+its field diameter matches DRIVE's before predicting, which recovers 8.8% on IDRiD_60. That fixes
+the resolution regime and **not** the camera: `R.inDomain` stays false off DRIVE, and the output
+there is a qualitative overlay, not a measurement.
+
+#### Optic disc / fovea localisation — 103 sealed IDRiD test images
 
 The PS asks for "optic disc/fovea localisation" as one requirement, so both halves get a
 localisation error, not a segmentation score standing in for one.
@@ -141,32 +203,6 @@ fovea method's own failures, not error inherited from the disc. The gap between 
 
 ---
 
-### Vessel segmentation — 20 sealed DRIVE test images
-
-Trained on DRIVE (16 fit / 4 validation), threshold frozen on validation before the test set was
-opened. Every figure is computed **inside the field of view**: DRIVE ships no FOV masks in this
-copy so they are derived by `retinalMask`, and the field covers only 68.5% of the frame — scoring
-the whole rectangle would hand the model ~34.5% of its true negatives for free.
-
-| metric | value | | metric | value |
-|---|---|---|---|---|
-| **ROC-AUC** | **0.9738** | | GlobalAccuracy | 0.9502 |
-| **Dice** | **0.8110** | | MeanAccuracy | 0.9046 |
-| Sensitivity | 0.8453 | | MeanIoU | 0.8135 |
-| Specificity | 0.9658 | | WeightedIoU | 0.9110 |
-| Precision | 0.7832 | | MeanBFScore | 0.9586 |
-| IoU (vessel) | 0.6828 | | MeanBFScore @ 2px | 0.9111 |
-
-Read the right-hand column with care. `MeanIoU` averages the vessel IoU (0.6828) with the
-background IoU (0.9442), and background is ~87% of the field; `WeightedIoU` weights by class
-frequency and is therefore almost entirely a report on the background class. **The honest
-vessel number is IoU 0.6828.** `MeanBFScore` likewise depends on its tolerance, which defaults to
-0.75% of the image diagonal — ~6 px here, wider than most vessels in the image — so the strict
-2 px figure is given beside it.
-
-<p align="center">
-  <img src="results/overlays/vessels/drive_01_blend.png" alt="original, predicted vessels and ground truth for DRIVE test image 01" width="900">
-</p>
 
 ---
 
@@ -259,12 +295,16 @@ fundus image
 │ enhancement (display)   │   m2_enhance/    CLAHE on the retinal crop
 └─────────────────────────┘
      │
-     ├──────────────────────────────┬─────────────────────────────┐
-     ▼                              ▼                             │
-┌──────────────────┐      ┌──────────────────┐                    │
-│ lesion U-Net     │      │ ResNet-18 grader │                    │
-│ MA HE EX SE OD   │      │ ICDR 0–4         │                    │
-└──────────────────┘      └──────────────────┘                    │
+     ├───────────────┬──────────────┬─────────────────────────────┐
+     ▼               ▼              ▼                             │
+┌──────────────────┐ │    ┌──────────────────┐                    │
+│ lesion U-Net     │ │    │ ResNet-18 grader │                    │
+│ MA HE EX SE OD   │ │    │ ICDR 0–4         │                    │
+└──────────────────┘ │    └──────────────────┘                    │
+     │        ┌──────┴───────┐                                    │
+     │        │ vessel U-Net │  reported, NOT graded on —          │
+     │        │ vascular tree│  needs A/V + calibre to feed 4-2-1  │
+     │        └──────────────┘                                    │
      │        │                  │ CNN grade                      │ Grad-CAM
      │        └──► landmarks: disc centroid (ch. 5) + fovea        │
      │                           │                                 │
@@ -312,6 +352,7 @@ fundus image
 |---|---|
 | `netra.m` | launches the GUI, or screens one image if given a path |
 | `netraScreen.m` | the full pipeline on one image, returning the result struct |
+| `netraSegment.m` | **Module 2 in one call** — lesion + vessel overlays on one image |
 | `netraDetect.m` | lesion segmentation alone |
 | `m6_vessels/segmentVessels.m` | vessel segmentation alone |
 | `m6_vessels/vesselSanityCheck.m` | one-image look: original / predicted / ground truth |
