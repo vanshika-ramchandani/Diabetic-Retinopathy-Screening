@@ -11,3 +11,4 @@ models/checkpoints_lesion_v2/
 data/cache/patches/neg_train/
 data/cache/patches/neg_val/
 models/trainedNet_v3.mat
+web/.gradio/

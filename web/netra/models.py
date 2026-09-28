@@ -50,7 +50,9 @@ def _with_cam_output(path: str) -> bytes:
 
 
 def device() -> str:
-    return 'GPU (CUDA)' if 'CUDAExecutionProvider' in providers() else 'CPU'
+    """What a session actually runs on. onnxruntime-gpu silently falls back to CPU when the
+    CUDA/cuDNN libraries don't match, so the installed package is not evidence of a GPU."""
+    return 'GPU (CUDA)' if 'CUDAExecutionProvider' in session('lesion').get_providers() else 'CPU'
 
 
 def run(name: str, X_nhwc: np.ndarray) -> list[np.ndarray]:

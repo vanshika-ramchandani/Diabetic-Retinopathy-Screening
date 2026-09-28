@@ -114,25 +114,49 @@ def verdict_html(R, stage):
     return badge('b-ok', '&#10003; RESOLVED ON-SITE') + f'<p>{html.escape(line)}</p>'
 
 
+CAM_LABEL = 'Model 1 - Grad-CAM (DR grade)'
+DISPLAY_WIDTH = 1600   # panels show ~340 px tall; full 4288 px frames only slow the public tunnel
+
+
+def for_display(a):
+    """Downscale a panel for the browser. Analysis always runs at full resolution."""
+    if a.shape[1] <= DISPLAY_WIDTH:
+        return a
+    h = round(a.shape[0] * DISPLAY_WIDTH / a.shape[1])
+    return np.asarray(Image.fromarray(a).resize((DISPLAY_WIDTH, h), Image.LANCZOS))
+
+
 def run(img, state):
     if img is None:
         raise gr.Error('Upload a fundus photo or pick a sample first.')
     img = np.asarray(img)
-    blank = None
+    sent = set()                     # each panel goes over the wire once, when its model finishes
+    first = True
     for stage, R in analyze_stream(img):
-        orig = R['image']
-        les = R['lesions']['overlay'] if 'lesions' in R else blank
-        ves = R['vessels']['overlay'] if 'vessels' in R else blank
-        cam = R['grader']['overlay'] if 'grader' in R else blank
-        cam_label = 'Model 1 - Grad-CAM (DR grade)'
+        panels = {'orig': R['image'],
+                  'les': R['lesions']['overlay'] if 'lesions' in R else None,
+                  'ves': R['vessels']['overlay'] if 'vessels' in R else None,
+                  'cam': R['grader']['overlay'] if 'grader' in R else None}
+        upd = {}
+        for k, a in panels.items():
+            if a is not None and k not in sent:
+                upd[k] = gr.update(value=for_display(a))
+                sent.add(k)
+            elif first:
+                upd[k] = gr.update(value=None)     # clear the previous photo's panels
+            else:
+                upd[k] = gr.update()
         if 'grader' in R:
             g = R['grader']
-            cam_label = f"Model 1 - Grad-CAM: grade {g['grade']} {GRADE_NAMES[g['grade']]} - conf {100 * g['confidence']:.0f}%"
+            upd['cam']['label'] = (f"Model 1 - Grad-CAM: grade {g['grade']} {GRADE_NAMES[g['grade']]}"
+                                   f" - conf {100 * g['confidence']:.0f}%")
+        elif first:
+            upd['cam']['label'] = CAM_LABEL
+        first = False
         state = {'done': stage == 'done', 'referable': bool(R.get('referable', False)),
                  'rejected': R.get('decision_path') == 'REJECTED_AT_QUALITY_GATE',
                  'escalate': R.get('dual', {}).get('decision') == 'ESCALATE'}
-        yield (gr.update(value=orig), gr.update(value=les), gr.update(value=ves),
-               gr.update(value=cam, label=cam_label), verdict_html(R, stage), card_html(R, stage),
+        yield (upd['orig'], upd['les'], upd['ves'], upd['cam'], verdict_html(R, stage), card_html(R, stage),
                TELEMED_READY, state)
 
 
@@ -186,7 +210,7 @@ def build():
             p1 = gr.Image(label='Original fundus (retinal field)', interactive=False, height=340)
             p2 = gr.Image(label='Model 1 - Lesions (IDRiD-trained)', interactive=False, height=340)
             p3 = gr.Image(label='Model 2 - Vessels (DRIVE-trained)', interactive=False, height=340)
-            p4 = gr.Image(label='Model 1 - Grad-CAM (DR grade)', interactive=False, height=340)
+            p4 = gr.Image(label=CAM_LABEL, interactive=False, height=340)
         gr.HTML(LEGEND)
         card = gr.HTML(card_html({}, ''))
         telemed = gr.HTML(TELEMED_READY)
@@ -213,5 +237,6 @@ if __name__ == '__main__':
     ap.add_argument('--port', type=int, default=7860)
     a = ap.parse_args()
     models.warmup()
+    print(f'NETRA models loaded - running on {models.device()}', flush=True)
     build().queue(default_concurrency_limit=2).launch(share=a.share, server_port=a.port,
                                                       css=CSS, theme=gr.themes.Soft())
