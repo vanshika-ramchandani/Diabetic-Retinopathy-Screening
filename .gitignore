@@ -4,3 +4,10 @@
 # The final net is saved separately to models/netra_*.mat, which IS tracked.
 models/checkpoints/
 models/checkpoints_vessel/
+web/tests/golden/
+.venv/
+__pycache__/
+models/checkpoints_lesion_v2/
+data/cache/patches/neg_train/
+data/cache/patches/neg_val/
+models/trainedNet_v3.mat

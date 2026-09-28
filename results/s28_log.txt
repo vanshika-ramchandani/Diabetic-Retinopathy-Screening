@@ -1,0 +1,20 @@
+    ----------------------------------------------------
+	Your license will expire in 6 days.
+	Please contact your system administrator or
+	go to MathWorks.com to renew this license.
+    ----------------------------------------------------
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+healthy eyes: 400 train (of 1264) | 60 val (of 271) - grader TEST split untouched
+  50/400 images  283 patches  1.0 min
+  100/400 images  548 patches  1.8 min
+  150/400 images  816 patches  2.7 min
+  200/400 images  1089 patches  3.5 min
+  250/400 images  1359 patches  4.4 min
+  300/400 images  1632 patches  5.2 min
+  350/400 images  1903 patches  6.0 min
+  400/400 images  2178 patches  6.8 min
+C:\Users\kanha\Desktop\SIH\data\cache\patches\neg_train: 2178 patches from 400 eyes  [false-detection 979 | fovea 400 | disc 399 | random 400]  6.8 min
+  50/60 images  277 patches  0.8 min
+C:\Users\kanha\Desktop\SIH\data\cache\patches\neg_val: 330 patches from 60 eyes  [false-detection 150 | fovea 60 | disc 60 | random 60]  1.0 min

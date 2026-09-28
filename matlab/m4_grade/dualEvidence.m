@@ -23,7 +23,12 @@ if ~isfield(opts,'referableFrom'), opts.referableFrom = 2; end
 
 cnnProb   = cnnProb(:)';
 cnnConf   = max(cnnProb);
-cnnRefer  = cnnGrade >= opts.referableFrom;
+if isfield(opts,'cnnReferable')
+    % a grader with its own calibrated operating point (sum of p(2..4) >= t)
+    cnnRefer = logical(opts.cnnReferable);
+else
+    cnnRefer = cnnGrade >= opts.referableFrom;
+end
 ruleRefer = ruleG.referable;
 delta     = abs(double(cnnGrade) - double(ruleG.grade));
 

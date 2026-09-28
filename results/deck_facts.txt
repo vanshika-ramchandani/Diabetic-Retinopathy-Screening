@@ -167,3 +167,27 @@ status.simulink = built + simulated (core Simulink)
 status.simevents = licensed but NOT installed on this machine
 status.vessel_segmentation = trained+evaluated (DRIVE, binary tree only)
 status.neovascularisation = not built - no labels exist
+
+# s27 - EfficientNet-B0 (trainedNet_v3), teammate split rng(42), n=548, live preprocessing
+effnet_sensitivity = 0.9013
+effnet_specificity = 0.8738
+effnet_auc = 0.9587
+effnet_accuracy_5class = 0.7409
+effnet_qwk = 0.7851
+effnet_d2_escalation_rate = 0.8942
+effnet_d2_missed_referable = 22
+effnet_d2_missed_referable_auto_cleared = 0
+
+[lesion_v2]  # s28-s30: v1 fine-tuned with healthy APTOS negatives; APTOS grader test n=549, native res
+lesion_v1.healthy_false_referral = 0.9630
+lesion_v1.d2_escalation_rate = 0.7596
+lesion_v1.d2_silent_misses = 0
+lesion_v1.d2_grader_errors_caught = 0.7879
+lesion_v1.idrid_dice = 0.5185 0.5904 0.7315 0.5460 0.8987  # MA HE EX SE OD
+lesion_v2.healthy_false_referral = 0.1704
+lesion_v2.d2_escalation_rate = 0.3752
+lesion_v2.d2_silent_misses = 0
+lesion_v2.d2_grader_errors_caught = 0.7879
+lesion_v2.idrid_dice = 0.5067 0.5764 0.6805 0.5998 0.8800  # MA HE EX SE OD
+lesion_v2.adopted = false
+lesion_v2.adopted_by_team = true  # 28 Sep 2026. s30 pre-registered verdict was KEEP v1: criterion 2 (no lesion Dice drop > 0.05) failed by 0.0010 on hard exudate (0.7315 -> 0.6805, 27 IDRiD images). Criteria 1 (healthy false referral 96.3% -> 17.0%) and 3 (0 silent misses) passed. Adopted with this deviation disclosed.

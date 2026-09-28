@@ -125,6 +125,18 @@ CFG.vesselFovEval = true;
 % the net always sees vessels at the width it was trained on.
 CFG.vesselRefDia  = 536;
 
+% ---- live prototype: which lesion net the app ships -----------------------
+% v1 = s05 (IDRiD only). v2 = s29 (v1 fine-tuned with healthy APTOS eyes).
+% s30 decides by a pre-registered rule; netraAnalyze and s25 read these two.
+% The historical scripts (netraScreen, s07, s14, s16) keep using v1 by name.
+% 28 Sep 2026: v2 ADOPTED by team decision although s30's pre-registered
+% criterion 2 failed by 0.001 (hard-exudate IDRiD Dice 0.7315 -> 0.6805, limit
+% 0.05). v2 cuts healthy false referral 96.3% -> 17.0% and D2 escalation 76.0%
+% -> 37.5% on the sealed APTOS test, with 0 silent misses. Disclosed in
+% results/deck_facts.txt [lesion_v2] and the README.
+CFG.lesionNetFile = "netra_lesion_net_v2.mat";
+CFG.lesionThrFile = "thresholds_v2.mat";
+
 % ---- inference ----------------------------------------------------------
 CFG.stride      = 256;
 CFG.minCompSize = [3 10 10 10 50];   % px, per channel

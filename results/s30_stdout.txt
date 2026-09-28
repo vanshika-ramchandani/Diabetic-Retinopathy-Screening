@@ -1,0 +1,32 @@
+    ----------------------------------------------------
+	Your license will expire in 6 days.
+	Please contact your system administrator or
+	go to MathWorks.com to renew this license.
+    ----------------------------------------------------
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+thresholds v1: 0.991 0.984 0.968 0.997 0.994
+thresholds v2: 0.979 0.970 0.989 0.999 0.996
+
+A. IDRiD test Dice      MA      HE      EX      SE      OD
+   v1              0.5185  0.5904  0.7315  0.5460  0.8987
+   v2              0.5067  0.5764  0.6805  0.5998  0.8800
+  50/549  1.4 min
+  100/549  2.9 min
+  150/549  4.4 min
+  200/549  5.8 min
+  250/549  7.5 min
+  300/549  9.4 min
+  350/549  11.3 min
+  400/549  13.2 min
+  450/549  14.9 min
+  500/549  16.7 min
+
+B. APTOS sealed test (n=549: 270 healthy, 56 mild, 223 referable)
+  v1  healthy called referable  96.3% | lesion-rule sens 1.000 spec 0.031 | D2 escalation  76.0% | grader errors caught  78.8% | silent misses 0
+      healthy eyes with any MA 11.1% HE 56.7% EX 81.9% SE 13.0%
+  v2  healthy called referable  17.0% | lesion-rule sens 0.928 spec 0.702 | D2 escalation  37.5% | grader errors caught  78.8% | silent misses 0
+      healthy eyes with any MA  6.3% HE  3.0% EX 16.3% SE  0.0%
+
+DECISION: false-referral drop >=25pts 1 | Dice drop <=0.05 all channels 0 | silent misses 0 1  ->  KEEP v1

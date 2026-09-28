@@ -1,0 +1,7 @@
+# CPU (Hugging Face Space, laptops). Colab installs onnxruntime-gpu instead - see colab_demo.ipynb.
+onnxruntime>=1.20
+onnx
+gradio>=5.0
+numpy
+scipy
+pillow

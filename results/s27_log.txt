@@ -1,0 +1,38 @@
+split: train 2564 | val 550 | test 548
+{Error using ' (line 265)
+Undefined function 'ctranspose' for input arguments of type 'table'. Use the ROWS2VARS function instead.
+
+Error in s27_measure_effnet (line 44)
+tc = countEachLabel(imdsTrain); disp(tc');   % must read 1264 259 699 135 207
+                                       ^
+} 
+split: train 2564 | val 550 | test 548
+        1264         259         699         135         207
+
+  25/548  31 s
+  50/548  51 s
+  75/548  79 s
+  100/548  97 s
+  125/548  121 s
+  150/548  142 s
+  175/548  173 s
+  200/548  196 s
+  225/548  224 s
+  250/548  254 s
+  275/548  289 s
+  300/548  328 s
+  325/548  356 s
+  350/548  381 s
+  375/548  415 s
+  400/548  454 s
+  425/548  481 s
+  450/548  505 s
+  475/548  526 s
+  500/548  556 s
+  525/548  578 s
+[ads] n=548  acc 0.7372  QWK 0.7606  referable@0.40 sens 0.9148 spec 0.8708 AUC 0.9562
+[live] n=548  acc 0.7409  QWK 0.7851  referable@0.40 sens 0.9013 spec 0.8738 AUC 0.9587
+D2: escalation rate 89.4% | EfficientNet referable errors escalated 58/63 (92.1%)
+D2: referable cases EfficientNet missed: 22 | escalated 22 | auto-cleared 0
+native width: median 2048 px (min 640, max 4288)
+done in 10 min
