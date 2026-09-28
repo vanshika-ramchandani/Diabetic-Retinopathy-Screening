@@ -33,8 +33,13 @@ CSS = """
 #hdr {background:#0b2545; color:#fff; padding:14px 20px; border-radius:10px}
 #hdr h1 {color:#fff; margin:0; font-size:22px}
 #hdr p {color:#cfe0f5; margin:4px 0 0 0; font-size:13px}
-.card {border:1px solid #d6dde6; border-radius:10px; padding:14px 18px; background:#fff; color:#15202b}
-.card h3 {margin:0 0 8px 0; font-size:15px; color:#0b2545}
+/* Gradio's theme colours text inside gr.HTML (pale in dark mode); these cards are always white,
+   so their text colour is forced rather than inherited. */
+.card {border:1px solid #d6dde6; border-radius:10px; padding:14px 18px; background:#fff !important}
+.card, .card * {color:#000 !important}
+.card h3 {margin:0 0 8px 0; font-size:15px}
+.card.sent {background:#fdf1e4 !important} .card.sent, .card.sent * {color:#8a3d00 !important}
+.card.clear {background:#e6f5e9 !important} .card.clear, .card.clear * {color:#1c6b2e !important}
 .mono {font-family: Consolas, Menlo, monospace; font-size:13px; line-height:1.55; white-space:pre-wrap}
 .badge {display:inline-block; padding:10px 18px; border-radius:8px; font-weight:700; font-size:16px}
 .b-ref {background:#f6d5d5; color:#9b1c1c} .b-ok {background:#d5f0da; color:#1c6b2e}
@@ -170,10 +175,10 @@ def dispatch(state):
     if state['rejected']:
         return '<div class="card mono">Not dispatched: image was not gradeable. Recapture on site.</div>'
     if state['referable'] or state['escalate']:
-        return ('<div class="card mono" style="background:#fdf1e4;color:#8a3d00">DISPATCH CONFIRMED (simulated): '
+        return ('<div class="card mono sent">DISPATCH CONFIRMED (simulated): '
                 'compressed referral package (4.8 MB) queued for the district hospital ophthalmologist, '
                 'with lesion map, vessel map and Grad-CAM attached.</div>')
-    return ('<div class="card mono" style="background:#e6f5e9;color:#1c6b2e">Telemedicine not required: '
+    return ('<div class="card mono clear">Telemedicine not required: '
             'patient cleared locally at the PHC. 0 bytes transmitted.</div>')
 
 
